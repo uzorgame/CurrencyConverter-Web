@@ -32,6 +32,7 @@ class CurrencyConverterScreen extends StatelessWidget {
 
     return Scaffold(
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             const _StatusTime(),
@@ -252,7 +253,7 @@ class _RatePanel extends StatelessWidget {
       width: double.infinity,
       height: 290,
       color: _AppColors.bgMain,
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
+      padding: const EdgeInsets.fromLTRB(22, 20, 22, 32),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
