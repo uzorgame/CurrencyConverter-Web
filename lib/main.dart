@@ -1,4 +1,6 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const CurrencyApp());
@@ -74,7 +76,8 @@ class AppStrings {
           'The app requests exchange rates from an external Currency API. These requests do not include personal information or identifiers.',
       'privacyNoSell': 'We do not sell or share user data.',
       'privacyFullDetails':
-          'For full details, please read our complete Privacy Policy at:\nhttps://uzorgame.github.io/privacy-policy-converter',
+          'For full details, please read our complete Privacy Policy at:',
+      'privacyPolicyUrl': 'https://uzorgame.github.io/privacy-policy-converter',
     },
     'UK': {
       'appTitle': 'Конвертер валют',
@@ -93,8 +96,8 @@ class AppStrings {
       'privacyCurrencyApi':
           'Додаток запитує курси валют у зовнішнього Currency API. Ці запити не містять персональної інформації чи ідентифікаторів.',
       'privacyNoSell': 'Ми не продаємо та не передаємо дані користувачів.',
-      'privacyFullDetails':
-          'Повну версію ви можете прочитати тут:\nhttps://uzorgame.github.io/privacy-policy-converter',
+      'privacyFullDetails': 'Повну версію ви можете прочитати тут:',
+      'privacyPolicyUrl': 'https://uzorgame.github.io/privacy-policy-converter',
     },
   };
 
@@ -1304,6 +1307,18 @@ class PrivacyPolicyPage extends StatelessWidget {
 
   final String language;
 
+  Future<void> _openPrivacyPolicy(BuildContext context) async {
+    final privacyPolicyUri = Uri.parse(AppStrings.of(language, 'privacyPolicyUrl'));
+
+    if (!await launchUrl(privacyPolicyUri, mode: LaunchMode.externalApplication)) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open the link')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1335,8 +1350,22 @@ class PrivacyPolicyPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Text(
-                      AppStrings.of(language, 'privacyFullDetails'),
+                    Text.rich(
+                      TextSpan(
+                        text: AppStrings.of(language, 'privacyFullDetails'),
+                        children: [
+                          const TextSpan(text: '\n'),
+                          TextSpan(
+                            text: AppStrings.of(language, 'privacyPolicyUrl'),
+                            style: const TextStyle(
+                              color: _AppColors.textDate,
+                              decoration: TextDecoration.underline,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () => _openPrivacyPolicy(context),
+                          ),
+                        ],
+                      ),
                       style: const TextStyle(
                         color: _AppColors.textMain,
                         fontSize: 17,
