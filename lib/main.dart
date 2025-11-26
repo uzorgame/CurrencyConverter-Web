@@ -1,9 +1,27 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-void main() {
-  runApp(const CurrencyApp());
+import 'providers/currency_provider.dart';
+import 'repositories/currency_repository.dart';
+import 'services/currency_api.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  final repository = CurrencyRepository(
+    api: CurrencyApi(),
+    prefs: prefs,
+  );
+
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => CurrencyProvider(repository)..init(),
+      child: const CurrencyApp(),
+    ),
+  );
 }
 
 double getFakeRate(String from, String to) => 0.71;
