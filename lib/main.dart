@@ -97,35 +97,64 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     return Scaffold(
       body: SafeArea(
         bottom: false,
-        child: Column(
+        child: Stack(
           children: [
-            const _StatusTime(),
-            const SizedBox(height: 12),
-            _CurrencyRow(
-              currency: _findCurrency(_fromCurrency),
-              valueText: _topDisplay,
-              onTap: () => _openCurrencyPicker(ActiveField.top),
+            Column(
+              children: [
+                const _StatusTime(),
+                const SizedBox(height: 12),
+                _CurrencyRow(
+                  currency: _findCurrency(_fromCurrency),
+                  valueText: _topDisplay,
+                  onTap: () => _openCurrencyPicker(ActiveField.top),
+                ),
+                const SizedBox(height: 10),
+                const _DividerLine(),
+                const SizedBox(height: 10),
+                _CurrencyRow(
+                  currency: _findCurrency(_toCurrency),
+                  valueText: _bottomDisplay,
+                  onTap: () => _openCurrencyPicker(ActiveField.bottom),
+                ),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: _Keypad(
+                    onKeyPressed: _handleKeyPress,
+                  ),
+                ),
+                SafeArea(
+                  bottom: true,
+                  child: _RatePanel(
+                    dateTimeText: _dateTimeText,
+                    rateText:
+                        '1 $_fromCurrency = ${getFakeRate(_fromCurrency, _toCurrency).toStringAsFixed(2)} $_toCurrency',
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
-            const _DividerLine(),
-            const SizedBox(height: 10),
-            _CurrencyRow(
-              currency: _findCurrency(_toCurrency),
-              valueText: _bottomDisplay,
-              onTap: () => _openCurrencyPicker(ActiveField.bottom),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: _Keypad(
-                onKeyPressed: _handleKeyPress,
-              ),
-            ),
-            SafeArea(
-              bottom: true,
-              child: _RatePanel(
-                dateTimeText: _dateTimeText,
-                rateText:
-                    '1 $_fromCurrency = ${getFakeRate(_fromCurrency, _toCurrency).toStringAsFixed(2)} $_toCurrency',
+            Positioned(
+              top: 10,
+              right: 8,
+              child: SizedBox(
+                height: 44,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const SettingsPage(),
+                      ),
+                    );
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 14),
+                    child: Icon(
+                      Icons.settings,
+                      color: _AppColors.textMain,
+                      size: 24,
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
@@ -877,3 +906,374 @@ String _formatDateTime(DateTime dateTime) {
 String _twoDigits(int value) => value.toString().padLeft(2, '0');
 
 enum ActiveField { top, bottom }
+
+class SettingsPage extends StatefulWidget {
+  const SettingsPage({super.key});
+
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  static const Map<String, String> _languages = {
+    'EN': 'English',
+    'UK': 'Українська',
+  };
+
+  String _selectedLanguage = _languages.keys.first;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _AppColors.bgMain,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _SettingsHeader(onBack: Navigator.of(context).pop),
+            const SizedBox(height: 18),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(11, 0, 11, 16),
+                itemBuilder: (context, index) {
+                  switch (index) {
+                    case 0:
+                      return _SettingsTile(
+                        title: 'Мова',
+                        trailingText: _languages[_selectedLanguage] ?? _selectedLanguage,
+                        onTap: _showLanguageSelector,
+                      );
+                    case 1:
+                      return _SettingsTile(
+                        title: 'Про додаток',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const AboutPage(),
+                            ),
+                          );
+                        },
+                      );
+                    case 2:
+                      return _SettingsTile(
+                        title: 'Політика конфіденційності',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const PrivacyPolicyPage(),
+                            ),
+                          );
+                        },
+                      );
+                  }
+                  return const SizedBox.shrink();
+                },
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemCount: 3,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLanguageSelector() async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: _AppColors.bgMain,
+      builder: (_) {
+        return SafeArea(
+          child: ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            itemBuilder: (context, index) {
+              final entry = _languages.entries.elementAt(index);
+              final isSelected = entry.key == _selectedLanguage;
+              return GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => Navigator.of(context).pop(entry.key),
+                child: Container(
+                  height: 56,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: isSelected ? _AppColors.keyRow1Bg : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Text(
+                        entry.value,
+                        style: const TextStyle(
+                          color: _AppColors.textMain,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (isSelected)
+                        const Icon(
+                          Icons.check,
+                          color: _AppColors.textMain,
+                        ),
+                    ],
+                  ),
+                ),
+              );
+            },
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemCount: _languages.length,
+          ),
+        );
+      },
+    );
+
+    if (selected == null) return;
+
+    setState(() {
+      _selectedLanguage = selected;
+    });
+  }
+}
+
+class _SettingsHeader extends StatelessWidget {
+  const _SettingsHeader({required this.onBack});
+
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 10, 8, 0),
+      child: SizedBox(
+        height: 44,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onBack,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 14),
+                  child: Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: _AppColors.textMain,
+                    size: 22,
+                  ),
+                ),
+              ),
+            ),
+            const Text(
+              'Налаштування',
+              style: TextStyle(
+                color: _AppColors.textMain,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsTile extends StatefulWidget {
+  const _SettingsTile({
+    required this.title,
+    this.trailingText,
+    required this.onTap,
+  });
+
+  final String title;
+  final String? trailingText;
+  final VoidCallback onTap;
+
+  @override
+  State<_SettingsTile> createState() => _SettingsTileState();
+}
+
+class _SettingsTileState extends State<_SettingsTile> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 80),
+      opacity: _pressed ? 0.9 : 1,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTap: () {
+          setState(() => _pressed = false);
+          widget.onTap();
+        },
+        child: Container(
+          height: 68,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  widget.title,
+                  style: const TextStyle(
+                    color: _AppColors.textMain,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              if (widget.trailingText != null)
+                Padding(
+                  padding: const EdgeInsets.only(right: 10),
+                  child: Text(
+                    widget.trailingText!,
+                    style: const TextStyle(
+                      color: Color(0xFF8F8F8F),
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              const Icon(
+                Icons.arrow_forward_ios,
+                color: Color(0xFF8F8F8F),
+                size: 16,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class AboutPage extends StatelessWidget {
+  const AboutPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _AppColors.bgMain,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _SimpleHeader(
+              title: 'About',
+              onBack: Navigator.of(context).pop,
+            ),
+            const SizedBox(height: 40),
+            const Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'UzorGame Inc',
+                      style: TextStyle(
+                        color: _AppColors.textMain,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Version 1.0.0',
+                      style: TextStyle(
+                        color: _AppColors.textRate,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class PrivacyPolicyPage extends StatelessWidget {
+  const PrivacyPolicyPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _AppColors.bgMain,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _SimpleHeader(
+              title: 'Privacy Policy',
+              onBack: Navigator.of(context).pop,
+            ),
+            const SizedBox(height: 40),
+            const Expanded(
+              child: Center(
+                child: Text(
+                  'Privacy policy content will be added soon.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: _AppColors.textMain,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SimpleHeader extends StatelessWidget {
+  const _SimpleHeader({required this.title, required this.onBack});
+
+  final String title;
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 10, 8, 0),
+      child: SizedBox(
+        height: 44,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onBack,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 14),
+                  child: Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: _AppColors.textMain,
+                    size: 22,
+                  ),
+                ),
+              ),
+            ),
+            Text(
+              title,
+              style: const TextStyle(
+                color: _AppColors.textMain,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
