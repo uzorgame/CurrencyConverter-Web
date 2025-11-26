@@ -6,6 +6,55 @@ void main() {
 
 double getFakeRate(String from, String to) => 0.71;
 
+class CurrencyData {
+  const CurrencyData({
+    required this.code,
+    required this.name,
+    required this.flagCode,
+  });
+
+  final String code;
+  final String name;
+  final String flagCode;
+}
+
+const List<CurrencyData> _currencies = [
+  CurrencyData(code: 'CAD', name: 'Канадський долар', flagCode: 'ca'),
+  CurrencyData(code: 'USD', name: 'Долар США', flagCode: 'us'),
+  CurrencyData(code: 'CLP', name: 'Чилійський песо', flagCode: 'cl'),
+  CurrencyData(code: 'CVE', name: 'Ескудо Кабо-Верде', flagCode: 'cv'),
+  CurrencyData(code: 'EUR', name: 'Євро', flagCode: 'eu'),
+  CurrencyData(code: 'MXN', name: 'Мексиканський песо', flagCode: 'mx'),
+  CurrencyData(code: 'GBP', name: 'Англійський фунт', flagCode: 'gb'),
+  CurrencyData(code: 'THB', name: 'Таїландський бат', flagCode: 'th'),
+  CurrencyData(code: 'JPY', name: 'Японська єна', flagCode: 'jp'),
+  CurrencyData(code: 'INR', name: 'Індійська рупія', flagCode: 'in'),
+  CurrencyData(code: 'VND', name: "В'єтнамський донг", flagCode: 'vn'),
+  CurrencyData(code: 'AUD', name: 'Австралійський долар', flagCode: 'au'),
+  CurrencyData(code: 'BGN', name: 'Болгарський лев', flagCode: 'bg'),
+  CurrencyData(code: 'BRL', name: 'Бразильський реал', flagCode: 'br'),
+  CurrencyData(code: 'CHF', name: 'Швейцарський франк', flagCode: 'ch'),
+  CurrencyData(code: 'CNY', name: 'Китайський юань', flagCode: 'cn'),
+  CurrencyData(code: 'CZK', name: 'Чеська крона', flagCode: 'cz'),
+  CurrencyData(code: 'DKK', name: 'Данська крона', flagCode: 'dk'),
+  CurrencyData(code: 'HKD', name: 'Гонконгський долар', flagCode: 'hk'),
+  CurrencyData(code: 'HUF', name: 'Угорський форинт', flagCode: 'hu'),
+  CurrencyData(code: 'IDR', name: 'Індонезійська рупія', flagCode: 'id'),
+  CurrencyData(code: 'ILS', name: 'Ізраїльський шекель', flagCode: 'il'),
+  CurrencyData(code: 'ISK', name: 'Ісландська крона', flagCode: 'is'),
+  CurrencyData(code: 'KRW', name: 'Південнокорейська вона', flagCode: 'kr'),
+  CurrencyData(code: 'MYR', name: 'Малайзійський рингіт', flagCode: 'my'),
+  CurrencyData(code: 'NOK', name: 'Норвезька крона', flagCode: 'no'),
+  CurrencyData(code: 'NZD', name: 'Новозеландський долар', flagCode: 'nz'),
+  CurrencyData(code: 'PHP', name: 'Філіппінський песо', flagCode: 'ph'),
+  CurrencyData(code: 'PLN', name: 'Польський злотий', flagCode: 'pl'),
+  CurrencyData(code: 'RON', name: 'Румунський лей', flagCode: 'ro'),
+  CurrencyData(code: 'SEK', name: 'Шведська крона', flagCode: 'se'),
+  CurrencyData(code: 'SGD', name: 'Сінгапурський долар', flagCode: 'sg'),
+  CurrencyData(code: 'TRY', name: 'Турецька ліра', flagCode: 'tr'),
+  CurrencyData(code: 'ZAR', name: 'Південноафриканський ренд', flagCode: 'za'),
+];
+
 class CurrencyApp extends StatelessWidget {
   const CurrencyApp({super.key});
 
@@ -56,19 +105,17 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
             const _StatusTime(),
             const SizedBox(height: 12),
             _CurrencyRow(
-              code: _fromCurrency,
-              flag: '🇨🇦',
+              currency: _findCurrency(_fromCurrency),
               valueText: _topDisplay,
-              onTap: _focusTopField,
+              onTap: () => _openCurrencyPicker(ActiveField.top),
             ),
             const SizedBox(height: 10),
             const _DividerLine(),
             const SizedBox(height: 10),
             _CurrencyRow(
-              code: _toCurrency,
-              flag: '🇺🇸',
+              currency: _findCurrency(_toCurrency),
               valueText: _bottomDisplay,
-              onTap: _focusTopField,
+              onTap: () => _openCurrencyPicker(ActiveField.bottom),
             ),
             const SizedBox(height: 16),
             Expanded(
@@ -246,9 +293,28 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     });
   }
 
-  void _focusTopField() {
+  Future<void> _openCurrencyPicker(ActiveField field) async {
+    final selected = await Navigator.of(context).push<String>(
+      PageRouteBuilder(
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+        pageBuilder: (_, __, ___) => CurrencyPickerPage(
+          initialCode:
+              field == ActiveField.top ? _fromCurrency : _toCurrency,
+        ),
+      ),
+    );
+
+    if (selected == null) return;
+
     setState(() {
+      if (field == ActiveField.top) {
+        _fromCurrency = selected;
+      } else {
+        _toCurrency = selected;
+      }
       _activeField = ActiveField.top;
+      _recalculateLinkedValue();
     });
   }
 
@@ -257,6 +323,15 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     final topValue = _parseDisplayValue(_topDisplay);
     _bottomDisplay = _formatNumber(topValue * rate);
     _updateTimestamp();
+  }
+
+  CurrencyData? _findCurrency(String code) {
+    for (final currency in _currencies) {
+      if (currency.code == code) {
+        return currency;
+      }
+    }
+    return null;
   }
 
   double _getActiveValue() => _parseDisplayValue(_getActiveDisplay());
@@ -328,6 +403,256 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   }
 }
 
+class CurrencyPickerPage extends StatefulWidget {
+  const CurrencyPickerPage({required this.initialCode, super.key});
+
+  final String initialCode;
+
+  @override
+  State<CurrencyPickerPage> createState() => _CurrencyPickerPageState();
+}
+
+class _CurrencyPickerPageState extends State<CurrencyPickerPage> {
+  final TextEditingController _searchController = TextEditingController();
+  late List<CurrencyData> _filteredCurrencies;
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredCurrencies = List.of(_currencies);
+    _searchController.addListener(_handleSearch);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_handleSearch);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _AppColors.bgMain,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _PickerHeader(onBack: Navigator.of(context).pop),
+            const SizedBox(height: 18),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 11),
+              child: _SearchField(controller: _searchController),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(11, 0, 11, 16),
+                itemBuilder: (context, index) {
+                  final currency = _filteredCurrencies[index];
+                  return _CurrencyTile(
+                    currency: currency,
+                    onTap: () => Navigator.of(context).pop(currency.code),
+                  );
+                },
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemCount: _filteredCurrencies.length,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handleSearch() {
+    final query = _searchController.text.trim().toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        _filteredCurrencies = List.of(_currencies);
+      } else {
+        _filteredCurrencies = _currencies.where((currency) {
+          final name = currency.name.toLowerCase();
+          final code = currency.code.toLowerCase();
+          return name.contains(query) || code.contains(query);
+        }).toList();
+      }
+    });
+  }
+}
+
+class _PickerHeader extends StatelessWidget {
+  const _PickerHeader({required this.onBack});
+
+  final VoidCallback onBack;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 10, 8, 0),
+      child: SizedBox(
+        height: 44,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: onBack,
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 14),
+                  child: Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: _AppColors.textMain,
+                    size: 22,
+                  ),
+                ),
+              ),
+            ),
+            const Text(
+              'Валюти',
+              style: TextStyle(
+                color: _AppColors.textMain,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchField extends StatelessWidget {
+  const _SearchField({required this.controller});
+
+  final TextEditingController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 47,
+      decoration: BoxDecoration(
+        color: const Color(0xFF3E3E3E),
+        borderRadius: BorderRadius.circular(13),
+      ),
+      child: TextField(
+        controller: controller,
+        style: const TextStyle(
+          color: _AppColors.textMain,
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+        ),
+        cursorColor: _AppColors.textMain,
+        decoration: const InputDecoration(
+          contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          border: InputBorder.none,
+          hintText: 'Пошук',
+          hintStyle: TextStyle(
+            color: Color(0xFF9A9A9A),
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CurrencyTile extends StatefulWidget {
+  const _CurrencyTile({
+    required this.currency,
+    required this.onTap,
+  });
+
+  final CurrencyData currency;
+  final VoidCallback onTap;
+
+  @override
+  State<_CurrencyTile> createState() => _CurrencyTileState();
+}
+
+class _CurrencyTileState extends State<_CurrencyTile> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 80),
+      opacity: _pressed ? 0.9 : 1,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTap: () {
+          setState(() => _pressed = false);
+          widget.onTap();
+        },
+        child: Container(
+          height: 68,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              _FlagIcon(flagCode: widget.currency.flagCode, size: 40),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  widget.currency.name,
+                  style: const TextStyle(
+                    color: _AppColors.textMain,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Text(
+                widget.currency.code,
+                style: const TextStyle(
+                  color: Color(0xFF8F8F8F),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FlagIcon extends StatelessWidget {
+  const _FlagIcon({required this.flagCode, required this.size});
+
+  final String? flagCode;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: Color(0xFF4A4A4A),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: flagCode == null
+          ? null
+          : Image.network(
+              _flagUrl(flagCode!),
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+            ),
+    );
+  }
+}
+
+String _flagUrl(String code) =>
+    'https://flagcdn.com/80x80/${code.toLowerCase()}.png';
+
 class _StatusTime extends StatelessWidget {
   const _StatusTime();
 
@@ -339,14 +664,12 @@ class _StatusTime extends StatelessWidget {
 
 class _CurrencyRow extends StatelessWidget {
   const _CurrencyRow({
-    required this.code,
-    required this.flag,
+    required this.currency,
     required this.valueText,
     required this.onTap,
   });
 
-  final String code;
-  final String flag;
+  final CurrencyData? currency;
   final String valueText;
   final VoidCallback onTap;
 
@@ -359,17 +682,13 @@ class _CurrencyRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Row(
           children: [
-            CircleAvatar(
-              radius: 22,
-              backgroundColor: Colors.transparent,
-              child: Text(
-                flag,
-                style: const TextStyle(fontSize: 24),
-              ),
+            _FlagIcon(
+              flagCode: currency?.flagCode,
+              size: 44,
             ),
             const SizedBox(width: 10),
             Text(
-              code,
+              currency?.code ?? '',
               style: const TextStyle(
                 color: _AppColors.textMain,
                 fontSize: 18,
