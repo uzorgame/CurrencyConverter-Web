@@ -977,9 +977,7 @@ String _formatDateTime(DateTime dateTime) {
   final year = dateTime.year.toString().padLeft(4, '0');
   final month = _twoDigits(dateTime.month);
   final day = _twoDigits(dateTime.day);
-  final hours = _twoDigits(dateTime.hour);
-  final minutes = _twoDigits(dateTime.minute);
-  return '$year-$month-$day, $hours:$minutes';
+  return '$year-$month-$day';
 }
 
 String _twoDigits(int value) => value.toString().padLeft(2, '0');
