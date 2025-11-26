@@ -6,6 +6,8 @@ void main() {
 
 double getFakeRate(String from, String to) => 0.71;
 
+const String kAppVersion = '1.0.0';
+
 class Currency {
   const Currency({
     required this.code,
@@ -52,26 +54,98 @@ const List<Currency> _currencies = [
   Currency(code: 'ZAR', name: 'South African Rand'),
 ];
 
+class AppStrings {
+  static const Map<String, Map<String, String>> _values = {
+    'EN': {
+      'appTitle': 'Currency Converter',
+      'settingsTitle': 'Settings',
+      'language': 'Language',
+      'about': 'About',
+      'privacyPolicy': 'Privacy Policy',
+      'aboutCompany': 'UzorGame Inc',
+      'versionLabel': 'Version $kAppVersion',
+      'privacyIntro':
+          'The app does not collect personal data. We do not ask for your name, email, phone number, contacts, or precise location.',
+      'privacyNoAds':
+          'We do not run ads, do not create accounts, and do not upload your data to our servers. All settings stay locally on your device.',
+      'privacyFirebase':
+          'The app uses Firebase Analytics to understand basic usage (e.g., crashes, screen views). This includes technical data such as device type, app version, and country (coarse). Firebase does not provide us with your identity or IP address.',
+      'privacyCurrencyApi':
+          'The app requests exchange rates from an external Currency API. These requests do not include personal information or identifiers.',
+      'privacyNoSell': 'We do not sell or share user data.',
+      'privacyFullDetails':
+          'For full details, please read our complete Privacy Policy at:\nhttps://uzorgame.github.io/privacy-policy-converter',
+    },
+    'UK': {
+      'appTitle': 'Конвертер валют',
+      'settingsTitle': 'Налаштування',
+      'language': 'Мова',
+      'about': 'Про додаток',
+      'privacyPolicy': 'Політика конфіденційності',
+      'aboutCompany': 'UzorGame Inc',
+      'versionLabel': 'Версія $kAppVersion',
+      'privacyIntro':
+          'Додаток не збирає персональні дані. Ми не запитуємо ваше ім’я, email, номер телефону, контакти чи точне місцезнаходження.',
+      'privacyNoAds':
+          'Ми не показуємо рекламу, не створюємо облікові записи і не завантажуємо ваші дані на наші сервери. Усі налаштування зберігаються локально на вашому пристрої.',
+      'privacyFirebase':
+          'Додаток використовує Firebase Analytics, щоб розуміти базове використання (наприклад, збої, перегляди екранів). Це включає технічні дані, такі як тип пристрою, версія додатка та країна (приблизно). Firebase не надає нам вашу особу чи IP-адресу.',
+      'privacyCurrencyApi':
+          'Додаток запитує курси валют у зовнішнього Currency API. Ці запити не містять персональної інформації чи ідентифікаторів.',
+      'privacyNoSell': 'Ми не продаємо та не передаємо дані користувачів.',
+      'privacyFullDetails':
+          'Повну версію ви можете прочитати тут:\nhttps://uzorgame.github.io/privacy-policy-converter',
+    },
+  };
+
+  static String of(String language, String key) {
+    return _values[language]?[key] ?? _values['EN']?[key] ?? key;
+  }
+
+  static List<String> privacyParagraphs(String language) => [
+        of(language, 'privacyIntro'),
+        of(language, 'privacyNoAds'),
+        of(language, 'privacyFirebase'),
+        of(language, 'privacyCurrencyApi'),
+        of(language, 'privacyNoSell'),
+      ];
+}
+
 class CurrencyApp extends StatelessWidget {
   const CurrencyApp({super.key});
 
+  static final ValueNotifier<String> _languageNotifier =
+      ValueNotifier(AppStrings._values.keys.first);
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Currency Converter',
-      theme: ThemeData(
-        scaffoldBackgroundColor: _AppColors.bgMain,
-        fontFamily: 'SF Pro Display',
-        colorScheme: const ColorScheme.dark(background: _AppColors.bgMain),
-      ),
-      home: const CurrencyConverterScreen(),
+    return ValueListenableBuilder<String>(
+      valueListenable: _languageNotifier,
+      builder: (context, language, _) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: AppStrings.of(language, 'appTitle'),
+          theme: ThemeData(
+            scaffoldBackgroundColor: _AppColors.bgMain,
+            fontFamily: 'SF Pro Display',
+            colorScheme: const ColorScheme.dark(background: _AppColors.bgMain),
+          ),
+          home: CurrencyConverterScreen(
+            languageNotifier: _languageNotifier,
+          ),
+        );
+      },
     );
   }
 }
 
 class CurrencyConverterScreen extends StatefulWidget {
-  const CurrencyConverterScreen({super.key});
+  const CurrencyConverterScreen({
+    super.key,
+    required this.languageNotifier,
+  });
+
+  final ValueNotifier<String> languageNotifier;
 
   @override
   State<CurrencyConverterScreen> createState() =>
@@ -142,7 +216,9 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => const SettingsPage(),
+                        builder: (_) => SettingsPage(
+                          languageNotifier: widget.languageNotifier,
+                        ),
                       ),
                     );
                   },
@@ -908,7 +984,12 @@ String _twoDigits(int value) => value.toString().padLeft(2, '0');
 enum ActiveField { top, bottom }
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  const SettingsPage({
+    super.key,
+    required this.languageNotifier,
+  });
+
+  final ValueNotifier<String> languageNotifier;
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -920,64 +1001,69 @@ class _SettingsPageState extends State<SettingsPage> {
     'UK': 'Українська',
   };
 
-  String _selectedLanguage = _languages.keys.first;
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _AppColors.bgMain,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _SettingsHeader(onBack: Navigator.of(context).pop),
-            const SizedBox(height: 18),
-            Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.fromLTRB(11, 0, 11, 16),
-                itemBuilder: (context, index) {
-                  switch (index) {
-                    case 0:
-                      return _SettingsTile(
-                        title: 'Мова',
-                        trailingText: _languages[_selectedLanguage] ?? _selectedLanguage,
-                        onTap: _showLanguageSelector,
-                      );
-                    case 1:
-                      return _SettingsTile(
-                        title: 'Про додаток',
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const AboutPage(),
-                            ),
+    return ValueListenableBuilder<String>(
+      valueListenable: widget.languageNotifier,
+      builder: (context, language, _) {
+        return Scaffold(
+          backgroundColor: _AppColors.bgMain,
+          body: SafeArea(
+            child: Column(
+              children: [
+                _SettingsHeader(
+                  title: AppStrings.of(language, 'settingsTitle'),
+                  onBack: Navigator.of(context).pop,
+                ),
+                const SizedBox(height: 18),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(11, 0, 11, 16),
+                    itemBuilder: (context, index) {
+                      switch (index) {
+                        case 0:
+                          return _SettingsTile(
+                            title: AppStrings.of(language, 'language'),
+                            trailingText:
+                                _languages[language] ?? language,
+                            onTap: () =>
+                                _showLanguageSelector(language),
                           );
-                        },
-                      );
-                    case 2:
-                      return _SettingsTile(
-                        title: 'Політика конфіденційності',
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => const PrivacyPolicyPage(),
-                            ),
+                        case 1:
+                          return _SettingsTile(
+                            title: AppStrings.of(language, 'about'),
+                            onTap: () =>
+                                _showAboutDialog(language),
                           );
-                        },
-                      );
-                  }
-                  return const SizedBox.shrink();
-                },
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemCount: 3,
-              ),
+                        case 2:
+                          return _SettingsTile(
+                            title: AppStrings.of(language, 'privacyPolicy'),
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => PrivacyPolicyPage(
+                                    language: language,
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemCount: 3,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  void _showLanguageSelector() async {
+  void _showLanguageSelector(String currentLanguage) async {
     final selected = await showModalBottomSheet<String>(
       context: context,
       backgroundColor: _AppColors.bgMain,
@@ -987,7 +1073,7 @@ class _SettingsPageState extends State<SettingsPage> {
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             itemBuilder: (context, index) {
               final entry = _languages.entries.elementAt(index);
-              final isSelected = entry.key == _selectedLanguage;
+              final isSelected = entry.key == currentLanguage;
               return GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () => Navigator.of(context).pop(entry.key),
@@ -1028,15 +1114,75 @@ class _SettingsPageState extends State<SettingsPage> {
 
     if (selected == null) return;
 
-    setState(() {
-      _selectedLanguage = selected;
-    });
+    widget.languageNotifier.value = selected;
+  }
+
+  Future<void> _showAboutDialog(String language) async {
+    await showDialog<void>(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          backgroundColor: _AppColors.bgMain,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Center(
+            child: Text(
+              AppStrings.of(language, 'about'),
+              style: const TextStyle(
+                color: _AppColors.textMain,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                AppStrings.of(language, 'aboutCompany'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: _AppColors.textMain,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                AppStrings.of(language, 'versionLabel'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: _AppColors.textRate,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            TextButton(
+              onPressed: Navigator.of(context).pop,
+              child: const Text(
+                'OK',
+                style: TextStyle(
+                  color: _AppColors.textMain,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
 
 class _SettingsHeader extends StatelessWidget {
-  const _SettingsHeader({required this.onBack});
+  const _SettingsHeader({required this.title, required this.onBack});
 
+  final String title;
   final VoidCallback onBack;
 
   @override
@@ -1063,9 +1209,9 @@ class _SettingsHeader extends StatelessWidget {
                 ),
               ),
             ),
-            const Text(
-              'Налаштування',
-              style: TextStyle(
+            Text(
+              title,
+              style: const TextStyle(
                 color: _AppColors.textMain,
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -1150,8 +1296,13 @@ class _SettingsTileState extends State<_SettingsTile> {
   }
 }
 
-class AboutPage extends StatelessWidget {
-  const AboutPage({super.key});
+class PrivacyPolicyPage extends StatelessWidget {
+  const PrivacyPolicyPage({
+    super.key,
+    required this.language,
+  });
+
+  final String language;
 
   @override
   Widget build(BuildContext context) {
@@ -1161,68 +1312,38 @@ class AboutPage extends StatelessWidget {
         child: Column(
           children: [
             _SimpleHeader(
-              title: 'About',
+              title: AppStrings.of(language, 'privacyPolicy'),
               onBack: Navigator.of(context).pop,
             ),
             const SizedBox(height: 40),
-            const Expanded(
-              child: Center(
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'UzorGame Inc',
-                      style: TextStyle(
-                        color: _AppColors.textMain,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
+                    ...AppStrings.privacyParagraphs(language).map(
+                      (paragraph) => Padding(
+                        padding: const EdgeInsets.only(bottom: 18),
+                        child: Text(
+                          paragraph,
+                          style: const TextStyle(
+                            color: _AppColors.textMain,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
-                    SizedBox(height: 8),
                     Text(
-                      'Version 1.0.0',
-                      style: TextStyle(
-                        color: _AppColors.textRate,
-                        fontSize: 16,
+                      AppStrings.of(language, 'privacyFullDetails'),
+                      style: const TextStyle(
+                        color: _AppColors.textMain,
+                        fontSize: 17,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class PrivacyPolicyPage extends StatelessWidget {
-  const PrivacyPolicyPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _AppColors.bgMain,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _SimpleHeader(
-              title: 'Privacy Policy',
-              onBack: Navigator.of(context).pop,
-            ),
-            const SizedBox(height: 40),
-            const Expanded(
-              child: Center(
-                child: Text(
-                  'Privacy policy content will be added soon.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: _AppColors.textMain,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
                 ),
               ),
             ),
