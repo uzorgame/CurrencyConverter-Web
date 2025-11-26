@@ -1,122 +1,333 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const CurrencyApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class CurrencyApp extends StatelessWidget {
+  const CurrencyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
+      title: 'Currency Converter',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        scaffoldBackgroundColor: _AppColors.bgMain,
+        fontFamily: 'SF Pro Display',
+        colorScheme: const ColorScheme.dark(background: _AppColors.bgMain),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const CurrencyConverterScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+class CurrencyConverterScreen extends StatelessWidget {
+  const CurrencyConverterScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
+    final now = DateTime.now();
+    final formattedDateTime = _formatDateTime(now);
+
     return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+      body: SafeArea(
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+          children: [
+            const _StatusTime(),
+            const SizedBox(height: 12),
+            const _CurrencyRow(code: 'CAD', flag: '🇨🇦'),
+            const SizedBox(height: 10),
+            const _DividerLine(),
+            const SizedBox(height: 10),
+            const _CurrencyRow(code: 'USD', flag: '🇺🇸'),
+            const SizedBox(height: 16),
+            const Expanded(child: _Keypad()),
+            _RatePanel(
+              dateTimeText: formattedDateTime,
+              rateText: '1 CAD = 0.71 USD',
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
+
+class _StatusTime extends StatelessWidget {
+  const _StatusTime();
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final timeText = _twoDigits(now.hour) + ':' + _twoDigits(now.minute);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 20),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              timeText,
+              textAlign: TextAlign.left,
+              style: const TextStyle(
+                color: _AppColors.textMain,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const Icon(
+            Icons.signal_cellular_alt,
+            color: _AppColors.textMain,
+            size: 18,
+          ),
+          const SizedBox(width: 6),
+          const Icon(
+            Icons.wifi,
+            color: _AppColors.textMain,
+            size: 18,
+          ),
+          const SizedBox(width: 6),
+          Container(
+            width: 26,
+            height: 14,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: _AppColors.textMain, width: 1.5),
+            ),
+            alignment: Alignment.center,
+            child: const Text(
+              '60%',
+              style: TextStyle(
+                color: _AppColors.textMain,
+                fontSize: 8,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CurrencyRow extends StatelessWidget {
+  const _CurrencyRow({required this.code, required this.flag});
+
+  final String code;
+  final String flag;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: Colors.transparent,
+            child: Text(
+              flag,
+              style: const TextStyle(fontSize: 24),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            code,
+            style: const TextStyle(
+              color: _AppColors.textMain,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const Spacer(),
+          const Text(
+            '0',
+            style: TextStyle(
+              color: _AppColors.textMain,
+              fontSize: 48,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DividerLine extends StatelessWidget {
+  const _DividerLine();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 1,
+      color: _AppColors.dividerLine,
+    );
+  }
+}
+
+class _Keypad extends StatelessWidget {
+  const _Keypad();
+
+  static const List<_KeyDefinition> _keys = [
+    _KeyDefinition('C', _AppColors.keyRow1Bg),
+    _KeyDefinition('←', _AppColors.keyRow1Bg),
+    _KeyDefinition('↑↓', _AppColors.keyRow1Bg),
+    _KeyDefinition('÷', _AppColors.keyOpBg),
+    _KeyDefinition('7', _AppColors.keyNumBg),
+    _KeyDefinition('8', _AppColors.keyNumBg),
+    _KeyDefinition('9', _AppColors.keyNumBg),
+    _KeyDefinition('×', _AppColors.keyOpBg),
+    _KeyDefinition('4', _AppColors.keyNumBg),
+    _KeyDefinition('5', _AppColors.keyNumBg),
+    _KeyDefinition('6', _AppColors.keyNumBg),
+    _KeyDefinition('−', _AppColors.keyOpBg),
+    _KeyDefinition('1', _AppColors.keyNumBg),
+    _KeyDefinition('2', _AppColors.keyNumBg),
+    _KeyDefinition('3', _AppColors.keyNumBg),
+    _KeyDefinition('+', _AppColors.keyOpBg),
+    _KeyDefinition('0', _AppColors.keyNumBg),
+    _KeyDefinition('.', _AppColors.keyNumBg),
+    _KeyDefinition('%', _AppColors.keyNumBg),
+    _KeyDefinition('=', _AppColors.keyOpBg),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 1),
+      child: GridView.builder(
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 4,
+          crossAxisSpacing: 3,
+          mainAxisSpacing: 3,
+        ),
+        itemCount: _keys.length,
+        itemBuilder: (context, index) {
+          final key = _keys[index];
+          return _KeyButton(label: key.label, backgroundColor: key.color);
+        },
+      ),
+    );
+  }
+}
+
+class _KeyButton extends StatelessWidget {
+  const _KeyButton({required this.label, required this.backgroundColor});
+
+  final String label;
+  final Color backgroundColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: backgroundColor,
+      child: Center(
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: _AppColors.textMain,
+            fontSize: 32,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RatePanel extends StatelessWidget {
+  const _RatePanel({required this.dateTimeText, required this.rateText});
+
+  final String dateTimeText;
+  final String rateText;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 290,
+      color: _AppColors.bgMain,
+      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.refresh,
+            color: _AppColors.textMain,
+            size: 28,
+          ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                dateTimeText,
+                style: const TextStyle(
+                  color: _AppColors.textDate,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                rateText,
+                style: const TextStyle(
+                  color: _AppColors.textRate,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: _AppColors.textMain, width: 2),
+            ),
+            child: const Icon(
+              Icons.circle,
+              color: _AppColors.textMain,
+              size: 18,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _KeyDefinition {
+  const _KeyDefinition(this.label, this.color);
+
+  final String label;
+  final Color color;
+}
+
+class _AppColors {
+  static const bgMain = Color(0xFF323232);
+  static const keyRow1Bg = Color(0xFF505050);
+  static const keyNumBg = Color(0xFF646464);
+  static const keyOpBg = Color(0xFFD68D41);
+  static const textMain = Color(0xFFF9F9F9);
+  static const textDate = Color(0xFF4CA58C);
+  static const textRate = Color(0xFF777777);
+  static const dividerLine = Color(0xFF4E443A);
+}
+
+String _formatDateTime(DateTime dateTime) {
+  final year = dateTime.year.toString().padLeft(4, '0');
+  final month = _twoDigits(dateTime.month);
+  final day = _twoDigits(dateTime.day);
+  final hours = _twoDigits(dateTime.hour);
+  final minutes = _twoDigits(dateTime.minute);
+  return '$year-$month-$day, $hours:$minutes';
+}
+
+String _twoDigits(int value) => value.toString().padLeft(2, '0');
