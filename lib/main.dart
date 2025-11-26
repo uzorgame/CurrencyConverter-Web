@@ -6,53 +6,50 @@ void main() {
 
 double getFakeRate(String from, String to) => 0.71;
 
-class CurrencyData {
-  const CurrencyData({
+class Currency {
+  const Currency({
     required this.code,
     required this.name,
-    required this.flagCode,
+    this.flag,
   });
 
   final String code;
   final String name;
-  final String flagCode;
+  final String? flag;
 }
 
-const List<CurrencyData> _currencies = [
-  CurrencyData(code: 'CAD', name: 'Канадський долар', flagCode: 'ca'),
-  CurrencyData(code: 'USD', name: 'Долар США', flagCode: 'us'),
-  CurrencyData(code: 'CLP', name: 'Чилійський песо', flagCode: 'cl'),
-  CurrencyData(code: 'CVE', name: 'Ескудо Кабо-Верде', flagCode: 'cv'),
-  CurrencyData(code: 'EUR', name: 'Євро', flagCode: 'eu'),
-  CurrencyData(code: 'MXN', name: 'Мексиканський песо', flagCode: 'mx'),
-  CurrencyData(code: 'GBP', name: 'Англійський фунт', flagCode: 'gb'),
-  CurrencyData(code: 'THB', name: 'Таїландський бат', flagCode: 'th'),
-  CurrencyData(code: 'JPY', name: 'Японська єна', flagCode: 'jp'),
-  CurrencyData(code: 'INR', name: 'Індійська рупія', flagCode: 'in'),
-  CurrencyData(code: 'VND', name: "В'єтнамський донг", flagCode: 'vn'),
-  CurrencyData(code: 'AUD', name: 'Австралійський долар', flagCode: 'au'),
-  CurrencyData(code: 'BGN', name: 'Болгарський лев', flagCode: 'bg'),
-  CurrencyData(code: 'BRL', name: 'Бразильський реал', flagCode: 'br'),
-  CurrencyData(code: 'CHF', name: 'Швейцарський франк', flagCode: 'ch'),
-  CurrencyData(code: 'CNY', name: 'Китайський юань', flagCode: 'cn'),
-  CurrencyData(code: 'CZK', name: 'Чеська крона', flagCode: 'cz'),
-  CurrencyData(code: 'DKK', name: 'Данська крона', flagCode: 'dk'),
-  CurrencyData(code: 'HKD', name: 'Гонконгський долар', flagCode: 'hk'),
-  CurrencyData(code: 'HUF', name: 'Угорський форинт', flagCode: 'hu'),
-  CurrencyData(code: 'IDR', name: 'Індонезійська рупія', flagCode: 'id'),
-  CurrencyData(code: 'ILS', name: 'Ізраїльський шекель', flagCode: 'il'),
-  CurrencyData(code: 'ISK', name: 'Ісландська крона', flagCode: 'is'),
-  CurrencyData(code: 'KRW', name: 'Південнокорейська вона', flagCode: 'kr'),
-  CurrencyData(code: 'MYR', name: 'Малайзійський рингіт', flagCode: 'my'),
-  CurrencyData(code: 'NOK', name: 'Норвезька крона', flagCode: 'no'),
-  CurrencyData(code: 'NZD', name: 'Новозеландський долар', flagCode: 'nz'),
-  CurrencyData(code: 'PHP', name: 'Філіппінський песо', flagCode: 'ph'),
-  CurrencyData(code: 'PLN', name: 'Польський злотий', flagCode: 'pl'),
-  CurrencyData(code: 'RON', name: 'Румунський лей', flagCode: 'ro'),
-  CurrencyData(code: 'SEK', name: 'Шведська крона', flagCode: 'se'),
-  CurrencyData(code: 'SGD', name: 'Сінгапурський долар', flagCode: 'sg'),
-  CurrencyData(code: 'TRY', name: 'Турецька ліра', flagCode: 'tr'),
-  CurrencyData(code: 'ZAR', name: 'Південноафриканський ренд', flagCode: 'za'),
+const List<Currency> _currencies = [
+  Currency(code: 'AUD', name: 'Australian Dollar'),
+  Currency(code: 'BGN', name: 'Bulgarian Lev'),
+  Currency(code: 'BRL', name: 'Brazilian Real'),
+  Currency(code: 'CAD', name: 'Canadian Dollar'),
+  Currency(code: 'CHF', name: 'Swiss Franc'),
+  Currency(code: 'CNY', name: 'Chinese Renminbi Yuan'),
+  Currency(code: 'CZK', name: 'Czech Koruna'),
+  Currency(code: 'DKK', name: 'Danish Krone'),
+  Currency(code: 'EUR', name: 'Euro'),
+  Currency(code: 'GBP', name: 'British Pound'),
+  Currency(code: 'HKD', name: 'Hong Kong Dollar'),
+  Currency(code: 'HUF', name: 'Hungarian Forint'),
+  Currency(code: 'IDR', name: 'Indonesian Rupiah'),
+  Currency(code: 'ILS', name: 'Israeli New Sheqel'),
+  Currency(code: 'INR', name: 'Indian Rupee'),
+  Currency(code: 'ISK', name: 'Icelandic Króna'),
+  Currency(code: 'JPY', name: 'Japanese Yen'),
+  Currency(code: 'KRW', name: 'South Korean Won'),
+  Currency(code: 'MXN', name: 'Mexican Peso'),
+  Currency(code: 'MYR', name: 'Malaysia Ringgit'),
+  Currency(code: 'NOK', name: 'Norwegian Krone'),
+  Currency(code: 'NZD', name: 'New Zealand Dollar'),
+  Currency(code: 'PHP', name: 'Philippine Peso'),
+  Currency(code: 'PLN', name: 'Polish Złoty'),
+  Currency(code: 'RON', name: 'Romanian Leu'),
+  Currency(code: 'SEK', name: 'Swedish Krona'),
+  Currency(code: 'SGD', name: 'Singapore Dollar'),
+  Currency(code: 'THB', name: 'Thai Baht'),
+  Currency(code: 'TRY', name: 'Turkish Lira'),
+  Currency(code: 'USD', name: 'United States Dollar'),
+  Currency(code: 'ZAR', name: 'South African Rand'),
 ];
 
 class CurrencyApp extends StatelessWidget {
@@ -325,7 +322,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     _updateTimestamp();
   }
 
-  CurrencyData? _findCurrency(String code) {
+  Currency? _findCurrency(String code) {
     for (final currency in _currencies) {
       if (currency.code == code) {
         return currency;
@@ -414,7 +411,7 @@ class CurrencyPickerPage extends StatefulWidget {
 
 class _CurrencyPickerPageState extends State<CurrencyPickerPage> {
   final TextEditingController _searchController = TextEditingController();
-  late List<CurrencyData> _filteredCurrencies;
+  late List<Currency> _filteredCurrencies;
 
   @override
   void initState() {
@@ -566,7 +563,7 @@ class _CurrencyTile extends StatefulWidget {
     required this.onTap,
   });
 
-  final CurrencyData currency;
+  final Currency currency;
   final VoidCallback onTap;
 
   @override
@@ -595,7 +592,7 @@ class _CurrencyTileState extends State<_CurrencyTile> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              _FlagIcon(flagCode: widget.currency.flagCode, size: 40),
+              _FlagIcon(flag: widget.currency.flag, size: 40),
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
@@ -624,9 +621,9 @@ class _CurrencyTileState extends State<_CurrencyTile> {
 }
 
 class _FlagIcon extends StatelessWidget {
-  const _FlagIcon({required this.flagCode, required this.size});
+  const _FlagIcon({required this.flag, required this.size});
 
-  final String? flagCode;
+  final String? flag;
   final double size;
 
   @override
@@ -639,19 +636,16 @@ class _FlagIcon extends StatelessWidget {
         color: Color(0xFF4A4A4A),
       ),
       clipBehavior: Clip.antiAlias,
-      child: flagCode == null
+      child: flag == null || flag!.isEmpty
           ? null
           : Image.network(
-              _flagUrl(flagCode!),
+              flag!,
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => const SizedBox.shrink(),
             ),
     );
   }
 }
-
-String _flagUrl(String code) =>
-    'https://flagcdn.com/80x80/${code.toLowerCase()}.png';
 
 class _StatusTime extends StatelessWidget {
   const _StatusTime();
@@ -669,7 +663,7 @@ class _CurrencyRow extends StatelessWidget {
     required this.onTap,
   });
 
-  final CurrencyData? currency;
+  final Currency? currency;
   final String valueText;
   final VoidCallback onTap;
 
@@ -683,7 +677,7 @@ class _CurrencyRow extends StatelessWidget {
         child: Row(
           children: [
             _FlagIcon(
-              flagCode: currency?.flagCode,
+              flag: currency?.flag,
               size: 44,
             ),
             const SizedBox(width: 10),
