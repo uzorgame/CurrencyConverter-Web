@@ -59,7 +59,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
               code: _fromCurrency,
               flag: '🇨🇦',
               valueText: _topDisplay,
-              onTap: () => _setActiveField(ActiveField.top),
+              onTap: _focusTopField,
             ),
             const SizedBox(height: 10),
             const _DividerLine(),
@@ -68,7 +68,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
               code: _toCurrency,
               flag: '🇺🇸',
               valueText: _bottomDisplay,
-              onTap: () => _setActiveField(ActiveField.bottom),
+              onTap: _focusTopField,
             ),
             const SizedBox(height: 16),
             Expanded(
@@ -82,7 +82,6 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                 dateTimeText: _dateTimeText,
                 rateText:
                     '1 $_fromCurrency = ${getFakeRate(_fromCurrency, _toCurrency).toStringAsFixed(2)} $_toCurrency',
-                onRefresh: _handleRefresh,
               ),
             ),
           ],
@@ -127,6 +126,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
 
   void _handleDigit(String digit) {
     setState(() {
+      _activeField = ActiveField.top;
       if (_awaitingSecondOperand) {
         _setActiveDisplay('0');
         _awaitingSecondOperand = false;
@@ -146,6 +146,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
 
   void _handleDecimalPoint() {
     setState(() {
+      _activeField = ActiveField.top;
       if (_awaitingSecondOperand) {
         _setActiveDisplay('0');
         _awaitingSecondOperand = false;
@@ -167,6 +168,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
 
   void _handleClear() {
     setState(() {
+      _activeField = ActiveField.top;
       _topDisplay = '0';
       _bottomDisplay = '0';
       _selectedOperation = null;
@@ -178,6 +180,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
 
   void _handleBackspace() {
     setState(() {
+      _activeField = ActiveField.top;
       var current = _getActiveDisplay();
       if (current.length <= 1) {
         current = '0';
@@ -200,6 +203,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       _topDisplay = _bottomDisplay;
       _bottomDisplay = tempValue;
 
+      _activeField = ActiveField.top;
       _recalculateLinkedValue();
     });
   }
@@ -209,6 +213,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       _firstOperand = _getActiveValue();
       _selectedOperation = op;
       _awaitingSecondOperand = true;
+      _activeField = ActiveField.top;
       _setActiveDisplay('0');
     });
   }
@@ -221,6 +226,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       final result = _calculateResult(_firstOperand, secondOperand, _selectedOperation!);
       _selectedOperation = null;
       _awaitingSecondOperand = false;
+      _activeField = ActiveField.top;
       _setActiveDisplay(_formatNumber(result));
       _recalculateLinkedValue();
     });
@@ -234,35 +240,22 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       } else {
         value = _firstOperand * _getActiveValue() / 100;
       }
+      _activeField = ActiveField.top;
       _setActiveDisplay(_formatNumber(value));
       _recalculateLinkedValue();
     });
   }
 
-  void _handleRefresh() {
+  void _focusTopField() {
     setState(() {
-      final rate = getFakeRate(_fromCurrency, _toCurrency);
-      final topValue = _parseDisplayValue(_topDisplay);
-      _bottomDisplay = _formatNumber(topValue * rate);
-      _updateTimestamp();
-    });
-  }
-
-  void _setActiveField(ActiveField field) {
-    setState(() {
-      _activeField = field;
+      _activeField = ActiveField.top;
     });
   }
 
   void _recalculateLinkedValue() {
     final rate = getFakeRate(_fromCurrency, _toCurrency);
-    if (_activeField == ActiveField.top) {
-      final topValue = _parseDisplayValue(_topDisplay);
-      _bottomDisplay = _formatNumber(topValue * rate);
-    } else {
-      final bottomValue = _parseDisplayValue(_bottomDisplay);
-      _topDisplay = _formatNumber(bottomValue / rate);
-    }
+    final topValue = _parseDisplayValue(_topDisplay);
+    _bottomDisplay = _formatNumber(topValue * rate);
     _updateTimestamp();
   }
 
@@ -340,56 +333,7 @@ class _StatusTime extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final timeText = _twoDigits(now.hour) + ':' + _twoDigits(now.minute);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 20),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              timeText,
-              textAlign: TextAlign.left,
-              style: const TextStyle(
-                color: _AppColors.textMain,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          const Icon(
-            Icons.signal_cellular_alt,
-            color: _AppColors.textMain,
-            size: 18,
-          ),
-          const SizedBox(width: 6),
-          const Icon(
-            Icons.wifi,
-            color: _AppColors.textMain,
-            size: 18,
-          ),
-          const SizedBox(width: 6),
-          Container(
-            width: 26,
-            height: 14,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(4),
-              border: Border.all(color: _AppColors.textMain, width: 1.5),
-            ),
-            alignment: Alignment.center,
-            child: const Text(
-              '60%',
-              style: TextStyle(
-                color: _AppColors.textMain,
-                fontSize: 8,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return const SizedBox(height: 44);
   }
 }
 
@@ -551,64 +495,36 @@ class _RatePanel extends StatelessWidget {
   const _RatePanel({
     required this.dateTimeText,
     required this.rateText,
-    required this.onRefresh,
   });
 
   final String dateTimeText;
   final String rateText;
-  final VoidCallback onRefresh;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: onRefresh,
-      child: Container(
-        width: double.infinity,
-        color: _AppColors.bgMain,
-        padding: const EdgeInsets.fromLTRB(22, 20, 22, 32),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
+    return Container(
+      width: double.infinity,
+      color: _AppColors.bgMain,
+      padding: const EdgeInsets.fromLTRB(22, 20, 22, 32),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.refresh,
-              color: _AppColors.textMain,
-              size: 28,
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  dateTimeText,
-                  style: const TextStyle(
-                    color: _AppColors.textDate,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  rateText,
-                  style: const TextStyle(
-                    color: _AppColors.textRate,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: _AppColors.textMain, width: 2),
+            Text(
+              dateTimeText,
+              style: const TextStyle(
+                color: _AppColors.textDate,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
               ),
-              child: const Icon(
-                Icons.circle,
-                color: _AppColors.textMain,
-                size: 18,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              rateText,
+              style: const TextStyle(
+                color: _AppColors.textRate,
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
