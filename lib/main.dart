@@ -44,9 +44,12 @@ class CurrencyConverterScreen extends StatelessWidget {
             const _CurrencyRow(code: 'USD', flag: '🇺🇸'),
             const SizedBox(height: 16),
             const Expanded(child: _Keypad()),
-            _RatePanel(
-              dateTimeText: formattedDateTime,
-              rateText: '1 CAD = 0.71 USD',
+            SafeArea(
+              bottom: true,
+              child: _RatePanel(
+                dateTimeText: formattedDateTime,
+                rateText: '1 CAD = 0.71 USD',
+              ),
             ),
           ],
         ),
@@ -251,7 +254,6 @@ class _RatePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      height: 290,
       color: _AppColors.bgMain,
       padding: const EdgeInsets.fromLTRB(22, 20, 22, 32),
       child: Row(
