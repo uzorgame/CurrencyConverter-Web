@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:country_flags/country_flags.dart';
 
 import 'providers/currency_provider.dart';
 import 'repositories/currency_repository.dart';
@@ -71,6 +72,40 @@ const List<Currency> _currencies = [
   Currency(code: 'USD', name: 'United States Dollar'),
   Currency(code: 'ZAR', name: 'South African Rand'),
 ];
+
+const Map<String, String> currencyToCountry = {
+  'USD': 'US',
+  'EUR': 'EU',
+  'GBP': 'GB',
+  'JPY': 'JP',
+  'PLN': 'PL',
+  'TRY': 'TR',
+  'CAD': 'CA',
+  'AUD': 'AU',
+  'CHF': 'CH',
+  'CNY': 'CN',
+  'INR': 'IN',
+  'BRL': 'BR',
+  'MXN': 'MX',
+  'SGD': 'SG',
+  'HKD': 'HK',
+  'SEK': 'SE',
+  'NOK': 'NO',
+  'DKK': 'DK',
+  'CZK': 'CZ',
+  'HUF': 'HU',
+  'ILS': 'IL',
+  'KRW': 'KR',
+  'ZAR': 'ZA',
+  'THB': 'TH',
+  'MYR': 'MY',
+  'PHP': 'PH',
+  'NZD': 'NZ',
+  'RON': 'RO',
+  'BGN': 'BG',
+  'ISK': 'IS',
+  'IDR': 'ID',
+};
 
 class AppStrings {
   static const Map<String, Map<String, String>> _values = {
@@ -832,7 +867,7 @@ class _CurrencyTileState extends State<_CurrencyTile> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              _FlagIcon(flag: widget.currency.flag, size: 40),
+              _FlagIcon(currencyCode: widget.currency.code, size: 40),
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
@@ -861,29 +896,33 @@ class _CurrencyTileState extends State<_CurrencyTile> {
 }
 
 class _FlagIcon extends StatelessWidget {
-  const _FlagIcon({required this.flag, required this.size});
+  const _FlagIcon({required this.currencyCode, required this.size});
 
-  final String? flag;
+  final String? currencyCode;
   final double size;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        color: Color(0xFF4A4A4A),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: flag == null || flag!.isEmpty
-          ? null
-          : Image.network(
-              flag!,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+    final countryCode =
+        currencyCode != null ? currencyToCountry[currencyCode!] : null;
+
+    final flagWidget = countryCode != null
+        ? CountryFlag.fromCountryCode(
+            countryCode,
+            shape: BoxShape.circle,
+            width: size,
+            height: size,
+          )
+        : Container(
+            width: size,
+            height: size,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: Color(0xFF4A4A4A),
             ),
-    );
+          );
+
+    return flagWidget;
   }
 }
 
@@ -922,7 +961,7 @@ class _CurrencyRow extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _FlagIcon(
-                    flag: currency?.flag,
+                    currencyCode: currency?.code,
                     size: 44,
                   ),
                   const SizedBox(height: 6),
