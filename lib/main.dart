@@ -524,7 +524,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
           const curve = Curves.easeOutQuad;
 
           final tween = Tween(begin: begin, end: end)
-              .chain(const CurveTween(curve: curve));
+              .chain(CurveTween(curve: curve));
 
           return SlideTransition(
             position: animation.drive(tween),
