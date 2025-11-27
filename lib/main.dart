@@ -1510,6 +1510,11 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
 
     if (cached != null) return;
 
+    await widget.repository.ensurePairFreshness(
+      widget.baseCurrency,
+      widget.targetCurrency,
+    );
+
     final rates = await widget.repository.loadLatest(
       base: widget.baseCurrency,
       target: widget.targetCurrency,
