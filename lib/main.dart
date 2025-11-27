@@ -1712,8 +1712,9 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
             gridData: FlGridData(show: false),
             lineTouchData: LineTouchData(
               touchTooltipData: LineTouchTooltipData(
-                tooltipBgColor: const Color(0xFF1E1E1E),
+                getTooltipColor: (_) => const Color(0xFF1E1E1E),
                 tooltipRoundedRadius: 12,
+                tooltipPadding: const EdgeInsets.all(8),
                 getTooltipItems: (touchedSpots) {
                   return touchedSpots.map((barSpot) {
                     final date = DateTime.fromMillisecondsSinceEpoch(barSpot.x.toInt());
@@ -1754,7 +1755,7 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
                 sideTitles: SideTitles(
                   showTitles: true,
                   reservedSize: 36,
-                  interval: interval,
+                  interval: interval.toDouble(),
                   getTitlesWidget: (value, meta) {
                     final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
                     return SideTitleWidget(

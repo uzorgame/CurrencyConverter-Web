@@ -115,5 +115,5 @@ class HistoricalRatesRepository {
     await database.upsertRates(fetched);
   }
 
-  String _pairKey(String base, String target) => '$_lastSyncPrefix_${base}_$target';
+  String _pairKey(String base, String target) => '${_lastSyncPrefix}_${base}_$target';
 }
