@@ -837,6 +837,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       useSafeArea: true,
+      enableDrag: false,
       builder: (_) => HistoryChartBottomSheet(
         baseCurrency: _fromCurrency,
         targetCurrency: _toCurrency,
@@ -1527,33 +1528,28 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.9,
-      minChildSize: 0.5,
-      builder: (context, controller) {
-        return Container(
-          decoration: const BoxDecoration(
-            color: _AppColors.bgMain,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
-          ),
-          padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
-          child: Column(
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 12),
-              _buildIntervals(),
-              const SizedBox(height: 18),
-              Expanded(
-                child: SingleChildScrollView(
-                  controller: controller,
-                  child: _buildChartArea(),
-                ),
+    return FractionallySizedBox(
+      heightFactor: 0.9,
+      child: Container(
+        decoration: const BoxDecoration(
+          color: _AppColors.bgMain,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        ),
+        padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
+        child: Column(
+          children: [
+            _buildHeader(),
+            const SizedBox(height: 12),
+            _buildIntervals(),
+            const SizedBox(height: 18),
+            Expanded(
+              child: SingleChildScrollView(
+                child: _buildChartArea(),
               ),
-            ],
-          ),
-        );
-      },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
