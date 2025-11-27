@@ -183,7 +183,6 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   double _firstOperand = 0;
   String? _selectedOperation;
   bool _awaitingSecondOperand = false;
-  String _dateTimeText = _formatDateTime(DateTime.now());
   bool _syncedWithProvider = false;
 
   @override
@@ -195,6 +194,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     final fromCurrency = _findCurrency(_fromCurrency, currencies);
     final toCurrency = _findCurrency(_toCurrency, currencies);
     final rateText = _formatRateText();
+    final dateTimeText = _formatLastUpdated(currencyProvider.lastUpdated);
 
     return Scaffold(
       body: SafeArea(
@@ -227,7 +227,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                 SafeArea(
                   bottom: true,
                   child: _RatePanel(
-                    dateTimeText: _dateTimeText,
+                    dateTimeText: dateTimeText,
                     rateText: rateText,
                   ),
                 ),
@@ -275,13 +275,6 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
           .toList();
     }
 
-    if (provider.currencies.isNotEmpty) {
-      final sorted = List<String>.from(provider.currencies)..sort();
-      return sorted
-          .map((code) => Currency(code: code, name: code))
-          .toList();
-    }
-
     return _currencies;
   }
 
@@ -296,20 +289,40 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     final availableCodes = availableCodesList.toSet();
     final defaultFrom = provider.fromCurrency.isNotEmpty
         ? provider.fromCurrency
-        : (availableCodesList.isNotEmpty ? availableCodesList.first : _fromCurrency);
+        : _defaultFromCurrency;
     final defaultTo = provider.toCurrency.isNotEmpty
         ? provider.toCurrency
+        : _defaultToCurrency;
+
+    final fallbackFrom = availableCodes.contains(defaultFrom)
+        ? defaultFrom
+        : (availableCodesList.isNotEmpty ? availableCodesList.first : _fromCurrency);
+    final syncedFrom = availableCodes.contains(_fromCurrency)
+        ? _fromCurrency
+        : fallbackFrom;
+
+    final fallbackTo = availableCodes.contains(defaultTo)
+        ? defaultTo
         : (availableCodesList.length > 1
             ? availableCodesList[1]
-            : defaultFrom);
+            : (availableCodesList.isNotEmpty ? availableCodesList.first : _toCurrency));
+
+    final syncedTo = availableCodes.contains(_toCurrency)
+        ? _toCurrency
+        : fallbackTo;
 
     setState(() {
-      _fromCurrency =
-          availableCodes.contains(_fromCurrency) ? _fromCurrency : defaultFrom;
-      _toCurrency =
-          availableCodes.contains(_toCurrency) ? _toCurrency : defaultTo;
+      _fromCurrency = syncedFrom;
+      _toCurrency = syncedTo;
       _syncedWithProvider = true;
     });
+
+    if (provider.fromCurrency != _fromCurrency) {
+      provider.setFromCurrency(_fromCurrency);
+    }
+    if (provider.toCurrency != _toCurrency) {
+      provider.setToCurrency(_toCurrency);
+    }
 
     _recalculateLinkedValue();
   }
@@ -421,7 +434,6 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       _selectedOperation = null;
       _firstOperand = 0;
       _awaitingSecondOperand = false;
-      _updateTimestamp();
     });
   }
 
@@ -451,6 +463,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       _bottomDisplay = tempValue;
 
       _activeField = ActiveField.top;
+      context.read<CurrencyProvider>().setFromCurrency(_fromCurrency);
+      context.read<CurrencyProvider>().setToCurrency(_toCurrency);
       _recalculateLinkedValue();
     });
   }
@@ -512,8 +526,10 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     setState(() {
       if (field == ActiveField.top) {
         _fromCurrency = selected;
+        context.read<CurrencyProvider>().setFromCurrency(selected);
       } else {
         _toCurrency = selected;
+        context.read<CurrencyProvider>().setToCurrency(selected);
       }
       _activeField = ActiveField.top;
       _recalculateLinkedValue();
@@ -528,7 +544,6 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     } else {
       _bottomDisplay = _formatNumber(topValue * rate);
     }
-    _updateTimestamp();
   }
 
   Currency? _findCurrency(String code, List<Currency> availableCurrencies) {
@@ -604,8 +619,10 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     return b;
   }
 
-  void _updateTimestamp() {
-    _dateTimeText = _formatDateTime(DateTime.now());
+  String _formatLastUpdated(DateTime dateTime) {
+    if (dateTime.millisecondsSinceEpoch == 0) return '--';
+
+    return _formatDateTime(dateTime);
   }
 }
 
