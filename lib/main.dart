@@ -28,7 +28,7 @@ Future<void> main() async {
   );
 }
 
-const String kAppVersion = '1.0.0';
+const String kAppVersion = '1.0.1+2';
 
 class Currency {
   const Currency({
