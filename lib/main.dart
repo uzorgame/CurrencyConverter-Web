@@ -173,7 +173,7 @@ Widget buildEurFlag() {
 class AppStrings {
   static const Map<String, Map<String, String>> _values = {
     'EN': {
-      'appTitle': 'Currency Converter',
+      'appTitle': 'Currency Converter+',
       'settingsTitle': 'Settings',
       'language': 'Language',
       'about': 'About',
