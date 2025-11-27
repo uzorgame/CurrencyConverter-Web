@@ -24,8 +24,6 @@ Future<void> main() async {
   );
 }
 
-double getFakeRate(String from, String to) => 0.71;
-
 const String kAppVersion = '1.0.0';
 
 class Currency {
@@ -186,9 +184,18 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   String? _selectedOperation;
   bool _awaitingSecondOperand = false;
   String _dateTimeText = _formatDateTime(DateTime.now());
+  bool _syncedWithProvider = false;
 
   @override
   Widget build(BuildContext context) {
+    final currencyProvider = context.watch<CurrencyProvider>();
+    final currencies = _availableCurrencies(currencyProvider);
+    _maybeSyncWithProvider(currencyProvider, currencies);
+
+    final fromCurrency = _findCurrency(_fromCurrency, currencies);
+    final toCurrency = _findCurrency(_toCurrency, currencies);
+    final rateText = _formatRateText();
+
     return Scaffold(
       body: SafeArea(
         bottom: false,
@@ -199,7 +206,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                 const _StatusTime(),
                 const SizedBox(height: 12),
                 _CurrencyRow(
-                  currency: _findCurrency(_fromCurrency),
+                  currency: fromCurrency,
                   valueText: _topDisplay,
                   onTap: () => _openCurrencyPicker(ActiveField.top),
                 ),
@@ -207,7 +214,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                 const _DividerLine(),
                 const SizedBox(height: 10),
                 _CurrencyRow(
-                  currency: _findCurrency(_toCurrency),
+                  currency: toCurrency,
                   valueText: _bottomDisplay,
                   onTap: () => _openCurrencyPicker(ActiveField.bottom),
                 ),
@@ -221,8 +228,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                   bottom: true,
                   child: _RatePanel(
                     dateTimeText: _dateTimeText,
-                    rateText:
-                        '1 $_fromCurrency = ${getFakeRate(_fromCurrency, _toCurrency).toStringAsFixed(2)} $_toCurrency',
+                    rateText: rateText,
                   ),
                 ),
               ],
@@ -258,6 +264,77 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
         ),
       ),
     );
+  }
+
+  List<Currency> _availableCurrencies(CurrencyProvider provider) {
+    if (provider.currencyNames.isNotEmpty) {
+      final entries = provider.currencyNames.entries.toList()
+        ..sort((a, b) => a.key.compareTo(b.key));
+      return entries
+          .map((entry) => Currency(code: entry.key, name: entry.value))
+          .toList();
+    }
+
+    if (provider.currencies.isNotEmpty) {
+      final sorted = List<String>.from(provider.currencies)..sort();
+      return sorted
+          .map((code) => Currency(code: code, name: code))
+          .toList();
+    }
+
+    return _currencies;
+  }
+
+  void _maybeSyncWithProvider(
+    CurrencyProvider provider,
+    List<Currency> availableCurrencies,
+  ) {
+    if (_syncedWithProvider || provider.status != CurrencyStatus.loaded) return;
+
+    final availableCodesList =
+        availableCurrencies.map((c) => c.code).toList(growable: false);
+    final availableCodes = availableCodesList.toSet();
+    final defaultFrom = provider.fromCurrency.isNotEmpty
+        ? provider.fromCurrency
+        : (availableCodesList.isNotEmpty ? availableCodesList.first : _fromCurrency);
+    final defaultTo = provider.toCurrency.isNotEmpty
+        ? provider.toCurrency
+        : (availableCodesList.length > 1
+            ? availableCodesList[1]
+            : defaultFrom);
+
+    setState(() {
+      _fromCurrency =
+          availableCodes.contains(_fromCurrency) ? _fromCurrency : defaultFrom;
+      _toCurrency =
+          availableCodes.contains(_toCurrency) ? _toCurrency : defaultTo;
+      _syncedWithProvider = true;
+    });
+
+    _recalculateLinkedValue();
+  }
+
+  double? _computeRate(String from, String to) {
+    final provider = context.read<CurrencyProvider>();
+    if (provider.status != CurrencyStatus.loaded || provider.rates.isEmpty) {
+      return null;
+    }
+
+    final fromRate = provider.rates[from];
+    final toRate = provider.rates[to];
+
+    if (fromRate == null || toRate == null || fromRate == 0) return null;
+
+    return toRate / fromRate;
+  }
+
+  String _formatRateText() {
+    final rate = _computeRate(_fromCurrency, _toCurrency);
+    if (rate == null) {
+      return '1 $_fromCurrency = -- $_toCurrency';
+    }
+
+    return '1 $_fromCurrency = ${rate.toStringAsFixed(2)} $_toCurrency';
   }
 
   void _handleKeyPress(String label) {
@@ -417,11 +494,13 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   }
 
   Future<void> _openCurrencyPicker(ActiveField field) async {
+    final currencies = _availableCurrencies(context.read<CurrencyProvider>());
     final selected = await Navigator.of(context).push<String>(
       PageRouteBuilder(
         transitionDuration: Duration.zero,
         reverseTransitionDuration: Duration.zero,
         pageBuilder: (_, __, ___) => CurrencyPickerPage(
+          currencies: currencies,
           initialCode:
               field == ActiveField.top ? _fromCurrency : _toCurrency,
         ),
@@ -442,14 +521,18 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   }
 
   void _recalculateLinkedValue() {
-    final rate = getFakeRate(_fromCurrency, _toCurrency);
+    final rate = _computeRate(_fromCurrency, _toCurrency);
     final topValue = _parseDisplayValue(_topDisplay);
-    _bottomDisplay = _formatNumber(topValue * rate);
+    if (rate == null) {
+      _bottomDisplay = '0';
+    } else {
+      _bottomDisplay = _formatNumber(topValue * rate);
+    }
     _updateTimestamp();
   }
 
-  Currency? _findCurrency(String code) {
-    for (final currency in _currencies) {
+  Currency? _findCurrency(String code, List<Currency> availableCurrencies) {
+    for (final currency in availableCurrencies) {
       if (currency.code == code) {
         return currency;
       }
@@ -527,9 +610,14 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
 }
 
 class CurrencyPickerPage extends StatefulWidget {
-  const CurrencyPickerPage({required this.initialCode, super.key});
+  const CurrencyPickerPage({
+    required this.initialCode,
+    required this.currencies,
+    super.key,
+  });
 
   final String initialCode;
+  final List<Currency> currencies;
 
   @override
   State<CurrencyPickerPage> createState() => _CurrencyPickerPageState();
@@ -542,7 +630,7 @@ class _CurrencyPickerPageState extends State<CurrencyPickerPage> {
   @override
   void initState() {
     super.initState();
-    _filteredCurrencies = List.of(_currencies);
+    _filteredCurrencies = List.of(widget.currencies);
     _searchController.addListener(_handleSearch);
   }
 
@@ -591,9 +679,9 @@ class _CurrencyPickerPageState extends State<CurrencyPickerPage> {
     final query = _searchController.text.trim().toLowerCase();
     setState(() {
       if (query.isEmpty) {
-        _filteredCurrencies = List.of(_currencies);
+        _filteredCurrencies = List.of(widget.currencies);
       } else {
-        _filteredCurrencies = _currencies.where((currency) {
+        _filteredCurrencies = widget.currencies.where((currency) {
           final name = currency.name.toLowerCase();
           final code = currency.code.toLowerCase();
           return name.contains(query) || code.contains(query);

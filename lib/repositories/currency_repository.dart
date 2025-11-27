@@ -10,27 +10,42 @@ class CurrencyRepository {
   final CurrencyApi api;
   final SharedPreferences prefs;
 
-  static const _ratesKey = 'cached_rates';
   static const _ratesDateKey = 'cached_rates_date';
+  static const _ratesCacheKey = 'cached_rates_cache_key';
   static const _currenciesKey = 'cached_currencies';
+  static const _currencyNamesKey = 'cached_currency_names';
 
   Map<String, double> _rates = {};
   List<String> _currencies = [];
+  Map<String, String> _currencyNames = {};
   DateTime? _lastUpdated;
 
   Map<String, double> get rates => _rates;
   List<String> get currencies => _currencies;
+  Map<String, String> get currencyNames => _currencyNames;
   DateTime get lastUpdated =>
       _lastUpdated ?? DateTime.fromMillisecondsSinceEpoch(0);
 
   Future<void> loadRates() async {
+    final today = DateTime.now();
+    final todayKey = _ratesKeyForDate(today);
+
+    if (_restoreRatesFromCache(
+      key: todayKey,
+      dateOverride: _restoreLastUpdatedDate() ?? today,
+    )) {
+      return;
+    }
+
     try {
       final latest = await api.getLatestRates();
       _rates = latest.rates;
       _lastUpdated = latest.date;
-      await _cacheRates();
+      await _cacheRates(today, lastUpdatedDate: latest.date);
     } catch (_) {
-      final restored = _restoreRatesFromCache();
+      final restored = _restoreRatesFromCache(
+        dateOverride: _restoreLastUpdatedDate(),
+      );
       if (!restored) rethrow;
     }
   }
@@ -38,12 +53,19 @@ class CurrencyRepository {
   Future<void> loadCurrencies() async {
     try {
       final loaded = await api.getCurrencies();
+      _currencyNames = loaded;
       _currencies = loaded.keys.toList()..sort();
       await prefs.setString(_currenciesKey, jsonEncode(_currencies));
+      await prefs.setString(_currencyNamesKey, jsonEncode(_currencyNames));
     } catch (_) {
       final cached = prefs.getString(_currenciesKey);
-      if (cached == null) rethrow;
+      final cachedNames = prefs.getString(_currencyNamesKey);
+      if (cached == null || cachedNames == null) rethrow;
       _currencies = List<String>.from(jsonDecode(cached) as List<dynamic>);
+      final decodedNames = jsonDecode(cachedNames) as Map<String, dynamic>;
+      _currencyNames = decodedNames.map(
+        (key, value) => MapEntry(key, value as String),
+      );
     }
   }
 
@@ -62,28 +84,43 @@ class CurrencyRepository {
     return amount * (toRate / fromRate);
   }
 
-  Future<void> _cacheRates() async {
-    await prefs.setString(_ratesKey, jsonEncode(_rates));
+  Future<void> _cacheRates(DateTime cacheDate, {DateTime? lastUpdatedDate}) async {
+    final key = _ratesKeyForDate(cacheDate);
+    await prefs.setString(key, jsonEncode(_rates));
+    await prefs.setString(_ratesCacheKey, key);
     await prefs.setString(
       _ratesDateKey,
-      _lastUpdated?.toIso8601String() ?? '',
+      (lastUpdatedDate ?? cacheDate).toIso8601String(),
     );
   }
 
-  bool _restoreRatesFromCache() {
-    final cachedRates = prefs.getString(_ratesKey);
-    if (cachedRates == null) return false;
+  bool _restoreRatesFromCache({String? key, DateTime? dateOverride}) {
+    final cacheKey = key ?? prefs.getString(_ratesCacheKey);
 
-    final cachedDate = prefs.getString(_ratesDateKey);
+    if (cacheKey == null) return false;
+
+    final cachedRates = prefs.getString(cacheKey);
+
+    if (cachedRates == null) return false;
 
     final decoded = jsonDecode(cachedRates) as Map<String, dynamic>;
     _rates = decoded.map(
       (key, value) => MapEntry(key, (value as num).toDouble()),
     );
-    if (cachedDate != null && cachedDate.isNotEmpty) {
-      _lastUpdated = DateTime.tryParse(cachedDate);
-    }
+    _lastUpdated = dateOverride ?? _restoreLastUpdatedDate();
 
     return true;
+  }
+
+  String _ratesKeyForDate(DateTime date) {
+    final dateString = date.toIso8601String().split('T').first;
+    return 'currency_rates_$dateString';
+  }
+
+  DateTime? _restoreLastUpdatedDate() {
+    final cachedDateString = prefs.getString(_ratesDateKey);
+    if (cachedDateString == null || cachedDateString.isEmpty) return null;
+
+    return DateTime.tryParse(cachedDateString);
   }
 }
