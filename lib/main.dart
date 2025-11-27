@@ -594,15 +594,11 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   }
 
   String _formatNumber(double value) {
-    if (value == value.truncateToDouble()) {
+    if (value.abs() >= 1000) {
       return value.toStringAsFixed(0);
     }
-    var text = value.toStringAsFixed(6);
-    text = text.replaceFirst(RegExp(r'0+$'), '');
-    if (text.endsWith('.')) {
-      text = text.substring(0, text.length - 1);
-    }
-    return text;
+
+    return value.toStringAsFixed(2);
   }
 
   double _calculateResult(double a, double b, String operation) {
@@ -907,17 +903,26 @@ class _CurrencyRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Row(
           children: [
-            _FlagIcon(
-              flag: currency?.flag,
-              size: 44,
-            ),
-            const SizedBox(width: 10),
-            Text(
-              currency?.code ?? '',
-              style: const TextStyle(
-                color: _AppColors.textMain,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+            SizedBox(
+              width: 64,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _FlagIcon(
+                    flag: currency?.flag,
+                    size: 44,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    currency?.code ?? '',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: _AppColors.textMain,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
             const Spacer(),
