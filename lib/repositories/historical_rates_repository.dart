@@ -64,12 +64,10 @@ class HistoricalRatesRepository {
   }
 
   Future<void> _syncPair(String base, String target) async {
-    final latestRate = await _tryFetchLatestRate(base, target);
-    if (latestRate == null) return;
-
-    final apiDate = _normalizeDate(latestRate.date);
-    final desiredStart = _historyStartFrom(apiDate);
     final bounds = await database.fetchDateBounds(base: base, target: target);
+    final latestRate = await _tryFetchLatestRate(base, target);
+    final apiDate = _normalizeDate(latestRate?.date ?? DateTime.now());
+    final desiredStart = _historyStartFrom(apiDate);
 
     if (bounds == null) {
       await _fetchAndStore(base, target, desiredStart, apiDate);
