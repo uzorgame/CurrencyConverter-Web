@@ -74,6 +74,14 @@ class HistoricalDatabase {
     return rows.map((row) => HistoricalRate.fromMap(row)).toList();
   }
 
+  Future<bool> hasAnyRates() async {
+    final db = await database;
+    final result = await db.rawQuery('SELECT COUNT(*) as total FROM historical_rates');
+    if (result.isEmpty) return false;
+    final total = result.first['total'] as int?;
+    return (total ?? 0) > 0;
+  }
+
   Future<_DateBounds?> fetchDateBounds({
     required String base,
     required String target,

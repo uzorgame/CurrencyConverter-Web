@@ -28,7 +28,6 @@ Future<void> main() async {
     api: api,
     database: HistoricalDatabase.instance,
     currencyRepository: repository,
-    prefs: prefs,
   );
 
   await historicalRepository.initialize();
@@ -1833,6 +1832,7 @@ enum _HistoryInterval {
   months3,
   months6,
   year1,
+  years5,
 }
 
 extension on _HistoryInterval {
@@ -1846,6 +1846,8 @@ extension on _HistoryInterval {
         return '6 месяцев';
       case _HistoryInterval.year1:
         return '1 год';
+      case _HistoryInterval.years5:
+        return '5 лет';
     }
   }
 
@@ -1859,6 +1861,8 @@ extension on _HistoryInterval {
         return 180;
       case _HistoryInterval.year1:
         return 365;
+      case _HistoryInterval.years5:
+        return 1826;
     }
   }
 }
