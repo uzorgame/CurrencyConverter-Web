@@ -907,11 +907,12 @@ class _FlagIcon extends StatelessWidget {
         currencyCode != null ? currencyToCountry[currencyCode!] : null;
 
     final flagWidget = countryCode != null
-        ? CountryFlag.fromCountryCode(
-            countryCode,
-            shape: BoxShape.circle,
-            width: size,
-            height: size,
+        ? ClipOval(
+            child: CountryFlag.fromCountryCode(
+              countryCode,
+              width: size,
+              height: size,
+            ),
           )
         : Container(
             width: size,
