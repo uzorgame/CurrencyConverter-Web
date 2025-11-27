@@ -1490,7 +1490,7 @@ class HistoryChartBottomSheet extends StatefulWidget {
 
 class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
   final Map<_HistoryInterval, List<HistoricalRate>> _cache = {};
-  _HistoryInterval _interval = _HistoryInterval.days30;
+  _HistoryInterval _interval = _HistoryInterval.days7;
   bool _loading = true;
   List<HistoricalRate> _currentRates = const [];
 
@@ -1833,16 +1833,18 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
 }
 
 enum _HistoryInterval {
+  days7,
   days30,
   months3,
   months6,
   year1,
-  years5,
 }
 
 extension on _HistoryInterval {
   String get label {
     switch (this) {
+      case _HistoryInterval.days7:
+        return '7d';
       case _HistoryInterval.days30:
         return '30d';
       case _HistoryInterval.months3:
@@ -1851,13 +1853,13 @@ extension on _HistoryInterval {
         return '6m';
       case _HistoryInterval.year1:
         return '1y';
-      case _HistoryInterval.years5:
-        return '5y';
     }
   }
 
   int get days {
     switch (this) {
+      case _HistoryInterval.days7:
+        return 7;
       case _HistoryInterval.days30:
         return 30;
       case _HistoryInterval.months3:
@@ -1866,8 +1868,6 @@ extension on _HistoryInterval {
         return 180;
       case _HistoryInterval.year1:
         return 365;
-      case _HistoryInterval.years5:
-        return 1826;
     }
   }
 }
