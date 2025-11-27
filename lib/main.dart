@@ -1533,7 +1533,7 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return FractionallySizedBox(
-      heightFactor: 0.9,
+      heightFactor: 0.8,
       child: Container(
         decoration: const BoxDecoration(
           color: _AppColors.bgMain,
