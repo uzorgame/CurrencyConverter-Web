@@ -19,7 +19,7 @@ class LatestRatesResponse {
 class CurrencyApi {
   CurrencyApi({http.Client? client}) : _client = client ?? http.Client();
 
-  static const _baseUrl = 'https://api.frankfurter.dev/v1';
+  static const _baseUrl = 'https://api.frankfurter.app';
 
   final http.Client _client;
   Map<String, double>? _latestRates;
@@ -48,6 +48,30 @@ class CurrencyApi {
       rates: _latestRates!,
       date: date,
       base: base,
+    );
+  }
+
+  Future<HistoricalRate> getLatestRateForPair({
+    required String base,
+    required String target,
+  }) async {
+    final uri = Uri.parse('$_baseUrl/latest?from=$base&to=$target');
+    final response = await _client.get(uri);
+
+    if (response.statusCode != 200) {
+      throw http.ClientException('Failed to fetch latest pair rate', uri);
+    }
+
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    final date = DateTime.parse(decoded['date'] as String);
+    final rates = decoded['rates'] as Map<String, dynamic>;
+    final rate = (rates[target] as num).toDouble();
+
+    return HistoricalRate(
+      date: date,
+      base: base,
+      target: target,
+      rate: rate,
     );
   }
 

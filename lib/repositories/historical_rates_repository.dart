@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../models/historical_rate.dart';
 import '../services/currency_api.dart';
 import '../services/historical_database.dart';
@@ -12,15 +10,11 @@ class HistoricalRatesRepository {
     required this.api,
     required this.database,
     required this.currencyRepository,
-    required this.prefs,
   });
 
   final CurrencyApi api;
   final HistoricalDatabase database;
   final CurrencyRepository currencyRepository;
-  final SharedPreferences prefs;
-
-  static const _lastSyncPrefix = 'history_last_sync';
   static const _defaultCurrencies = ['USD', 'EUR', 'PLN', 'GBP', 'TRY'];
 
   Future<void> initialize() async {
@@ -70,33 +64,28 @@ class HistoricalRatesRepository {
   }
 
   Future<void> _syncPair(String base, String target) async {
-    final today = DateTime.now();
-    final endDate = DateTime(today.year, today.month, today.day);
+    final latestRate = await _tryFetchLatestRate(base, target);
+    if (latestRate == null) return;
 
-    final lastSyncString = prefs.getString(_pairKey(base, target));
-    final lastSync = lastSyncString != null ? DateTime.tryParse(lastSyncString) : null;
-    if (lastSync != null && !lastSync.isBefore(endDate)) {
-      return;
-    }
-
-    final desiredStart = endDate.subtract(const Duration(days: 364));
+    final apiDate = _normalizeDate(latestRate.date);
+    final desiredStart = _historyStartFrom(apiDate);
     final bounds = await database.fetchDateBounds(base: base, target: target);
 
     if (bounds == null) {
-      await _fetchAndStore(base, target, desiredStart, endDate);
-    } else {
-      if (bounds.minDate.isAfter(desiredStart)) {
-        final missingEnd = bounds.minDate.subtract(const Duration(days: 1));
-        await _fetchAndStore(base, target, desiredStart, missingEnd);
-      }
-
-      if (bounds.maxDate.isBefore(endDate)) {
-        final missingStart = bounds.maxDate.add(const Duration(days: 1));
-        await _fetchAndStore(base, target, missingStart, endDate);
-      }
+      await _fetchAndStore(base, target, desiredStart, apiDate);
+      return;
     }
 
-    await prefs.setString(_pairKey(base, target), endDate.toIso8601String());
+    if (bounds.minDate.isAfter(desiredStart)) {
+      final missingEnd = bounds.minDate.subtract(const Duration(days: 1));
+      await _fetchAndStore(base, target, desiredStart, missingEnd);
+    }
+
+    final lastLocalDate = _normalizeDate(bounds.maxDate);
+    if (apiDate.isAfter(lastLocalDate)) {
+      final missingStart = lastLocalDate.add(const Duration(days: 1));
+      await _fetchAndStore(base, target, missingStart, apiDate);
+    }
   }
 
   Future<void> _fetchAndStore(
@@ -115,5 +104,20 @@ class HistoricalRatesRepository {
     await database.upsertRates(fetched);
   }
 
-  String _pairKey(String base, String target) => '${_lastSyncPrefix}_${base}_$target';
+  DateTime _historyStartFrom(DateTime latestDate) {
+    final normalized = _normalizeDate(latestDate);
+    final fiveYearsAgo = DateTime(normalized.year - 5, normalized.month, normalized.day);
+    final oneYearAgo = normalized.subtract(const Duration(days: 365));
+    return fiveYearsAgo.isBefore(oneYearAgo) ? fiveYearsAgo : oneYearAgo;
+  }
+
+  DateTime _normalizeDate(DateTime date) => DateTime(date.year, date.month, date.day);
+
+  Future<HistoricalRate?> _tryFetchLatestRate(String base, String target) async {
+    try {
+      return await api.getLatestRateForPair(base: base, target: target);
+    } catch (_) {
+      return null;
+    }
+  }
 }
