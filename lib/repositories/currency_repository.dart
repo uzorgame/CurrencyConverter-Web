@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -48,6 +50,11 @@ class CurrencyRepository {
   static const _ratesCacheKey = 'cached_rates_cache_key';
   static const _currenciesKey = 'cached_currencies';
   static const _currencyNamesKey = 'cached_currency_names';
+  static const _lastRatesTimestampKey = 'last_rates_timestamp';
+  static const _lastFromCurrencyKey = 'last_from_currency';
+  static const _lastToCurrencyKey = 'last_to_currency';
+  static const _lastAmountKey = 'last_amount';
+  static const _favoriteCurrenciesKey = 'favorite_currencies';
 
   Map<String, double> _rates = {};
   List<String> _currencies = [];
@@ -61,13 +68,24 @@ class CurrencyRepository {
       _lastUpdated ?? DateTime.fromMillisecondsSinceEpoch(0);
 
   Future<void> loadRates() async {
-    final today = DateTime.now();
-    final todayKey = _ratesKeyForDate(today);
+    final now = DateTime.now();
+    final cachedTimestamp = prefs.getInt(_lastRatesTimestampKey);
+    final cachedDate = cachedTimestamp != null
+        ? DateTime.fromMillisecondsSinceEpoch(cachedTimestamp)
+        : null;
+    final storedLastUpdated = _restoreLastUpdatedDate();
+    final isRecent = cachedTimestamp != null &&
+        now.millisecondsSinceEpoch - cachedTimestamp <=
+            const Duration(hours: 24).inMilliseconds;
 
-    if (_restoreRatesFromCache(
-      key: todayKey,
-      dateOverride: _restoreLastUpdatedDate() ?? today,
-    )) {
+    if (_rates.isNotEmpty && isRecent) {
+      return;
+    }
+
+    if (isRecent &&
+        _restoreRatesFromCache(
+          dateOverride: storedLastUpdated ?? cachedDate,
+        )) {
       return;
     }
 
@@ -75,11 +93,21 @@ class CurrencyRepository {
       final latest = await api.getLatestRates();
       _rates = latest.rates;
       _lastUpdated = latest.date;
-      await _cacheRates(today, lastUpdatedDate: latest.date);
-    } catch (_) {
-      final restored = _restoreRatesFromCache(
-        dateOverride: _restoreLastUpdatedDate(),
+      await _cacheRates(now, lastUpdatedDate: latest.date);
+      await prefs.setInt(
+        _lastRatesTimestampKey,
+        now.millisecondsSinceEpoch,
       );
+    } catch (error) {
+      final restored = _restoreRatesFromCache(
+        dateOverride: storedLastUpdated ?? cachedDate,
+      );
+
+      if (!restored &&
+          (error is SocketException || error is TimeoutException)) {
+        rethrow;
+      }
+
       if (!restored) rethrow;
     }
   }
@@ -126,6 +154,31 @@ class CurrencyRepository {
       source.entries.where((entry) => _supportedCurrencies.contains(entry.key)),
     );
   }
+
+  String? loadLastFromCurrency() => prefs.getString(_lastFromCurrencyKey);
+
+  String? loadLastToCurrency() => prefs.getString(_lastToCurrencyKey);
+
+  String? loadLastAmount() => prefs.getString(_lastAmountKey);
+
+  Future<void> saveLastFromCurrency(String code) =>
+      prefs.setString(_lastFromCurrencyKey, code);
+
+  Future<void> saveLastToCurrency(String code) =>
+      prefs.setString(_lastToCurrencyKey, code);
+
+  Future<void> saveLastAmount(String amount) =>
+      prefs.setString(_lastAmountKey, amount);
+
+  List<String> loadFavoriteCurrencies() {
+    final favorites = prefs.getStringList(_favoriteCurrenciesKey) ?? [];
+    return favorites
+        .where((code) => _supportedCurrencies.contains(code))
+        .toList();
+  }
+
+  Future<void> saveFavoriteCurrencies(List<String> favorites) =>
+      prefs.setStringList(_favoriteCurrenciesKey, favorites);
 
   Future<void> _cacheRates(DateTime cacheDate, {DateTime? lastUpdatedDate}) async {
     final key = _ratesKeyForDate(cacheDate);

@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'providers/currency_provider.dart';
 import 'repositories/currency_repository.dart';
 import 'services/currency_api.dart';
+import 'utils/amount_formatter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -408,9 +409,14 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
         ? _toCurrency
         : fallbackTo;
 
+    final amountInput = provider.amountInput.isNotEmpty
+        ? provider.amountInput
+        : _topDisplay;
+
     setState(() {
       _fromCurrency = syncedFrom;
       _toCurrency = syncedTo;
+      _topDisplay = _sanitizeNumberString(amountInput);
       _syncedWithProvider = true;
     });
 
@@ -419,6 +425,10 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     }
     if (provider.toCurrency != _toCurrency) {
       provider.setToCurrency(_toCurrency);
+    }
+
+    if (provider.amountInput != _topDisplay) {
+      provider.setAmountInput(_topDisplay);
     }
 
     _recalculateLinkedValue();
@@ -444,7 +454,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       return '1 $_fromCurrency = -- $_toCurrency';
     }
 
-    return '1 $_fromCurrency = ${rate.toStringAsFixed(2)} $_toCurrency';
+    return '1 $_fromCurrency = ${formatAmount(rate)} $_toCurrency';
   }
 
   void _handleKeyPress(String label) {
@@ -499,6 +509,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       _setActiveDisplay(current);
       _recalculateLinkedValue();
     });
+
+    _persistTopAmount();
   }
 
   void _handleDecimalPoint() {
@@ -521,6 +533,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       _setActiveDisplay(current);
       _recalculateLinkedValue();
     });
+
+    _persistTopAmount();
   }
 
   void _handleClear() {
@@ -532,6 +546,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       _firstOperand = 0;
       _awaitingSecondOperand = false;
     });
+
+    _persistTopAmount();
   }
 
   void _handleBackspace() {
@@ -547,6 +563,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       _setActiveDisplay(current);
       _recalculateLinkedValue();
     });
+
+    _persistTopAmount();
   }
 
   void _handleSwap() {
@@ -556,14 +574,16 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       _toCurrency = tempCurrency;
 
       final tempValue = _topDisplay;
-      _topDisplay = _bottomDisplay;
-      _bottomDisplay = tempValue;
+      _topDisplay = _sanitizeNumberString(_bottomDisplay);
+      _bottomDisplay = formatAmount(_parseDisplayValue(tempValue));
 
       _activeField = ActiveField.top;
       context.read<CurrencyProvider>().setFromCurrency(_fromCurrency);
       context.read<CurrencyProvider>().setToCurrency(_toCurrency);
       _recalculateLinkedValue();
     });
+
+    _persistTopAmount();
   }
 
   void _handleOperation(String op) {
@@ -574,6 +594,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       _activeField = ActiveField.top;
       _setActiveDisplay('0');
     });
+
+    _persistTopAmount();
   }
 
   void _handleEquals() {
@@ -588,6 +610,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       _setActiveDisplay(_formatNumber(result));
       _recalculateLinkedValue();
     });
+
+    _persistTopAmount();
   }
 
   void _handlePercent() {
@@ -602,6 +626,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       _setActiveDisplay(_formatNumber(value));
       _recalculateLinkedValue();
     });
+
+    _persistTopAmount();
   }
 
   Future<void> _openCurrencyPicker(ActiveField field) async {
@@ -652,8 +678,12 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     if (rate == null) {
       _bottomDisplay = '0';
     } else {
-      _bottomDisplay = _formatNumber(topValue * rate);
+      _bottomDisplay = formatAmount(topValue * rate);
     }
+  }
+
+  void _persistTopAmount() {
+    context.read<CurrencyProvider>().setAmountInput(_topDisplay);
   }
 
   Currency? _findCurrency(String code, List<Currency> availableCurrencies) {
@@ -679,6 +709,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   }
 
   double _parseDisplayValue(String value) {
+    value = value.replaceAll(',', '');
+
     if (value.endsWith('.')) {
       value = value.substring(0, value.length - 1);
     }
@@ -686,6 +718,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   }
 
   String _sanitizeNumberString(String value) {
+    value = value.replaceAll(',', '');
+
     if (value.contains('.')) {
       final parts = value.split('.');
       var intPart = parts.first;
@@ -704,11 +738,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   }
 
   String _formatNumber(double value) {
-    if (value.abs() >= 1000) {
-      return value.toStringAsFixed(0);
-    }
-
-    return value.toStringAsFixed(2);
+    return formatAmount(value).replaceAll(',', '');
   }
 
   double _calculateResult(double a, double b, String operation) {
@@ -766,6 +796,26 @@ class _CurrencyPickerPageState extends State<CurrencyPickerPage> {
 
   @override
   Widget build(BuildContext context) {
+    final currencyProvider = context.watch<CurrencyProvider>();
+    final favoriteCodes = currencyProvider.favoriteCurrencies.toSet();
+
+    final favoriteCurrencies = _filteredCurrencies
+        .where((currency) => favoriteCodes.contains(currency.code))
+        .toList();
+    final otherCurrencies = _filteredCurrencies
+        .where((currency) => !favoriteCodes.contains(currency.code))
+        .toList();
+
+    final tiles = <Widget>[
+      if (favoriteCurrencies.isNotEmpty) ...[
+        const _FavoritesHeader(),
+        const SizedBox(height: 10),
+        ..._buildTiles(favoriteCurrencies, currencyProvider),
+        if (otherCurrencies.isNotEmpty) const SizedBox(height: 16),
+      ],
+      ..._buildTiles(otherCurrencies, currencyProvider),
+    ];
+
     return Scaffold(
       backgroundColor: _AppColors.bgMain,
       body: SafeArea(
@@ -779,17 +829,10 @@ class _CurrencyPickerPageState extends State<CurrencyPickerPage> {
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: ListView.separated(
+              child: ListView.builder(
                 padding: const EdgeInsets.fromLTRB(11, 0, 11, 16),
-                itemBuilder: (context, index) {
-                  final currency = _filteredCurrencies[index];
-                  return _CurrencyTile(
-                    currency: currency,
-                    onTap: () => Navigator.of(context).pop(currency.code),
-                  );
-                },
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
-                itemCount: _filteredCurrencies.length,
+                itemBuilder: (context, index) => tiles[index],
+                itemCount: tiles.length,
               ),
             ),
           ],
@@ -810,6 +853,25 @@ class _CurrencyPickerPageState extends State<CurrencyPickerPage> {
           return name.contains(query) || code.contains(query);
         }).toList();
       }
+    });
+  }
+
+  List<Widget> _buildTiles(
+    List<Currency> currencies,
+    CurrencyProvider provider,
+  ) {
+    return List.generate(currencies.length, (index) {
+      final currency = currencies[index];
+      final isFavorite = provider.isFavorite(currency.code);
+      return Padding(
+        padding: EdgeInsets.only(bottom: index == currencies.length - 1 ? 0 : 10),
+        child: _CurrencyTile(
+          currency: currency,
+          isFavorite: isFavorite,
+          onTap: () => Navigator.of(context).pop(currency.code),
+          onFavoriteToggle: () => provider.toggleFavorite(currency.code),
+        ),
+      );
     });
   }
 }
@@ -898,10 +960,14 @@ class _CurrencyTile extends StatefulWidget {
   const _CurrencyTile({
     required this.currency,
     required this.onTap,
+    required this.onFavoriteToggle,
+    required this.isFavorite,
   });
 
   final Currency currency;
   final VoidCallback onTap;
+  final VoidCallback onFavoriteToggle;
+  final bool isFavorite;
 
   @override
   State<_CurrencyTile> createState() => _CurrencyTileState();
@@ -949,7 +1015,45 @@ class _CurrencyTileState extends State<_CurrencyTile> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: widget.onFavoriteToggle,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 12),
+                  child: Icon(
+                    widget.isFavorite
+                        ? Icons.star_rounded
+                        : Icons.star_border_rounded,
+                    color: widget.isFavorite
+                        ? const Color(0xFFF6C94C)
+                        : const Color(0xFF8F8F8F),
+                    size: 24,
+                  ),
+                ),
+              ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FavoritesHeader extends StatelessWidget {
+  const _FavoritesHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: EdgeInsets.only(left: 8),
+        child: Text(
+          'Вибрані',
+          style: TextStyle(
+            color: _AppColors.textMain,
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
