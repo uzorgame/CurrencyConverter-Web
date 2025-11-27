@@ -1839,15 +1839,15 @@ extension on _HistoryInterval {
   String get label {
     switch (this) {
       case _HistoryInterval.days30:
-        return '30 дней';
+        return '30d';
       case _HistoryInterval.months3:
-        return '3 месяца';
+        return '3m';
       case _HistoryInterval.months6:
-        return '6 месяцев';
+        return '6m';
       case _HistoryInterval.year1:
-        return '1 год';
+        return '1y';
       case _HistoryInterval.years5:
-        return '5 лет';
+        return '5y';
     }
   }
 
