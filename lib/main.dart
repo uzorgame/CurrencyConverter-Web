@@ -511,13 +511,26 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     final currencies = _availableCurrencies(context.read<CurrencyProvider>());
     final selected = await Navigator.of(context).push<String>(
       PageRouteBuilder(
-        transitionDuration: Duration.zero,
-        reverseTransitionDuration: Duration.zero,
+        transitionDuration: const Duration(milliseconds: 250),
+        reverseTransitionDuration: const Duration(milliseconds: 250),
         pageBuilder: (_, __, ___) => CurrencyPickerPage(
           currencies: currencies,
           initialCode:
               field == ActiveField.top ? _fromCurrency : _toCurrency,
         ),
+        transitionsBuilder: (_, animation, __, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.easeOutQuad;
+
+          final tween = Tween(begin: begin, end: end)
+              .chain(const CurveTween(curve: curve));
+
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
       ),
     );
 
@@ -1007,7 +1020,7 @@ class _Keypad extends StatelessWidget {
   }
 }
 
-class _KeyButton extends StatelessWidget {
+class _KeyButton extends StatefulWidget {
   const _KeyButton({
     required this.label,
     required this.backgroundColor,
@@ -1019,19 +1032,46 @@ class _KeyButton extends StatelessWidget {
   final VoidCallback onPressed;
 
   @override
+  State<_KeyButton> createState() => _KeyButtonState();
+}
+
+class _KeyButtonState extends State<_KeyButton> {
+  double _scale = 1.0;
+
+  void _handleTapDown(TapDownDetails details) {
+    setState(() => _scale = 0.92);
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    setState(() => _scale = 1.0);
+    widget.onPressed();
+  }
+
+  void _handleTapCancel() {
+    setState(() => _scale = 1.0);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: onPressed,
-      child: Container(
-        color: backgroundColor,
-        child: Center(
-          child: Text(
-            label,
-            style: const TextStyle(
-              color: _AppColors.textMain,
-              fontSize: 32,
-              fontWeight: FontWeight.w500,
+      onTapDown: _handleTapDown,
+      onTapUp: _handleTapUp,
+      onTapCancel: _handleTapCancel,
+      child: AnimatedScale(
+        scale: _scale,
+        duration: const Duration(milliseconds: 80),
+        curve: Curves.easeOut,
+        child: Container(
+          color: widget.backgroundColor,
+          child: Center(
+            child: Text(
+              widget.label,
+              style: const TextStyle(
+                color: _AppColors.textMain,
+                fontSize: 32,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
         ),
@@ -1068,12 +1108,16 @@ class _RatePanel extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
-            Text(
-              rateText,
-              style: const TextStyle(
-                color: _AppColors.textRate,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Text(
+                rateText,
+                key: ValueKey(rateText),
+                style: const TextStyle(
+                  color: _AppColors.textRate,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],
