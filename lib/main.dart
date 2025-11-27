@@ -1,9 +1,9 @@
+import 'package:circle_flags/circle_flags.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:country_flags/country_flags.dart';
 
 import 'providers/currency_provider.dart';
 import 'repositories/currency_repository.dart';
@@ -73,39 +73,59 @@ const List<Currency> _currencies = [
   Currency(code: 'ZAR', name: 'South African Rand'),
 ];
 
-const Map<String, String> currencyToCountry = {
-  'USD': 'US',
-  'EUR': 'EU',
-  'GBP': 'GB',
-  'JPY': 'JP',
-  'PLN': 'PL',
-  'TRY': 'TR',
-  'CAD': 'CA',
-  'AUD': 'AU',
-  'CHF': 'CH',
-  'CNY': 'CN',
-  'INR': 'IN',
-  'BRL': 'BR',
-  'MXN': 'MX',
-  'SGD': 'SG',
-  'HKD': 'HK',
-  'SEK': 'SE',
-  'NOK': 'NO',
-  'DKK': 'DK',
-  'CZK': 'CZ',
-  'HUF': 'HU',
-  'ILS': 'IL',
-  'KRW': 'KR',
-  'ZAR': 'ZA',
-  'THB': 'TH',
-  'MYR': 'MY',
-  'PHP': 'PH',
-  'NZD': 'NZ',
-  'RON': 'RO',
-  'BGN': 'BG',
-  'ISK': 'IS',
-  'IDR': 'ID',
+const Map<String, String> currencyToFlag = {
+  'AUD': 'au',
+  'BGN': 'bg',
+  'BRL': 'br',
+  'CAD': 'ca',
+  'CHF': 'ch',
+  'CNY': 'cn',
+  'CZK': 'cz',
+  'DKK': 'dk',
+  'EUR': 'eu',
+  'GBP': 'gb',
+  'HKD': 'hk',
+  'HUF': 'hu',
+  'IDR': 'id',
+  'ILS': 'il',
+  'INR': 'in',
+  'ISK': 'is',
+  'JPY': 'jp',
+  'KRW': 'kr',
+  'MXN': 'mx',
+  'MYR': 'my',
+  'NOK': 'no',
+  'NZD': 'nz',
+  'PHP': 'ph',
+  'PLN': 'pl',
+  'RON': 'ro',
+  'SEK': 'se',
+  'SGD': 'sg',
+  'THB': 'th',
+  'TRY': 'tr',
+  'USD': 'us',
+  'ZAR': 'za',
 };
+
+Widget buildCurrencyFlag(String currencyCode) {
+  final flagCode = currencyToFlag[currencyCode];
+
+  if (flagCode == null) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: Color(0xFF4F5A63),
+      ),
+    );
+  }
+
+  return CircleFlag(
+    flagCode,
+    size: 40,
+  );
+}
 
 class AppStrings {
   static const Map<String, Map<String, String>> _values = {
@@ -867,7 +887,7 @@ class _CurrencyTileState extends State<_CurrencyTile> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              _FlagIcon(currencyCode: widget.currency.code, size: 40),
+              buildCurrencyFlag(widget.currency.code),
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
@@ -892,38 +912,6 @@ class _CurrencyTileState extends State<_CurrencyTile> {
         ),
       ),
     );
-  }
-}
-
-class _FlagIcon extends StatelessWidget {
-  const _FlagIcon({required this.currencyCode, required this.size});
-
-  final String? currencyCode;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final countryCode =
-        currencyCode != null ? currencyToCountry[currencyCode!] : null;
-
-    final flagWidget = countryCode != null
-        ? ClipOval(
-            child: CountryFlag.fromCountryCode(
-              countryCode,
-              width: size,
-              height: size,
-            ),
-          )
-        : Container(
-            width: size,
-            height: size,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Color(0xFF4A4A4A),
-            ),
-          );
-
-    return flagWidget;
   }
 }
 
@@ -961,10 +949,7 @@ class _CurrencyRow extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _FlagIcon(
-                    currencyCode: currency?.code,
-                    size: 44,
-                  ),
+                  buildCurrencyFlag(currency?.code ?? ''),
                   const SizedBox(height: 6),
                   Text(
                     currency?.code ?? '',
