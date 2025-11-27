@@ -11,6 +11,7 @@ class CurrencyProvider extends ChangeNotifier {
 
   Map<String, double> rates = {};
   List<String> currencies = [];
+  Map<String, String> currencyNames = {};
   String fromCurrency = '';
   String toCurrency = '';
   double amount = 0;
@@ -31,6 +32,7 @@ class CurrencyProvider extends ChangeNotifier {
 
       rates = repository.rates;
       currencies = repository.currencies;
+      currencyNames = repository.currencyNames;
 
       fromCurrency = currencies.isNotEmpty ? currencies.first : '';
       toCurrency = currencies.length > 1 ? currencies[1] : fromCurrency;
