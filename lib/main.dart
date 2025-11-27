@@ -1,28 +1,46 @@
 import 'dart:math' as math;
 
 import 'package:circle_flags/circle_flags.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'models/historical_rate.dart';
 import 'providers/currency_provider.dart';
 import 'repositories/currency_repository.dart';
+import 'repositories/historical_rates_repository.dart';
 import 'services/currency_api.dart';
+import 'services/historical_database.dart';
 import 'utils/amount_formatter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
+  final api = CurrencyApi();
   final repository = CurrencyRepository(
-    api: CurrencyApi(),
+    api: api,
+    prefs: prefs,
+  );
+  final historicalRepository = HistoricalRatesRepository(
+    api: api,
+    database: HistoricalDatabase.instance,
+    currencyRepository: repository,
     prefs: prefs,
   );
 
+  await historicalRepository.initialize();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => CurrencyProvider(repository)..init(),
+    MultiProvider(
+      providers: [
+        Provider<HistoricalRatesRepository>.value(value: historicalRepository),
+        ChangeNotifierProvider(
+          create: (_) => CurrencyProvider(repository)..init(),
+        ),
+      ],
       child: const CurrencyApp(),
     ),
   );
@@ -427,6 +445,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                   child: _RatePanel(
                     dateTimeText: dateTimeText,
                     rateText: rateText,
+                    onTap: _openHistorySheet,
                   ),
                 ),
               ],
@@ -805,6 +824,26 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
           },
         );
       },
+    );
+  }
+
+  void _openHistorySheet() {
+    final provider = context.read<CurrencyProvider>();
+    final repository = context.read<HistoricalRatesRepository>();
+    final rate = _computeRate(_fromCurrency, _toCurrency);
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => HistoryChartBottomSheet(
+        baseCurrency: _fromCurrency,
+        targetCurrency: _toCurrency,
+        latestRate: rate,
+        lastUpdated: provider.lastUpdated,
+        repository: repository,
+      ),
     );
   }
 
@@ -1381,46 +1420,449 @@ class _RatePanel extends StatelessWidget {
   const _RatePanel({
     required this.dateTimeText,
     required this.rateText,
+    required this.onTap,
   });
 
   final String dateTimeText;
   final String rateText;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      color: _AppColors.bgMain,
-      padding: const EdgeInsets.fromLTRB(22, 15, 22, 24),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              dateTimeText,
-              style: const TextStyle(
-                color: _AppColors.textDate,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 6),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: Text(
-                rateText,
-                key: ValueKey(rateText),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        color: _AppColors.bgMain,
+        padding: const EdgeInsets.fromLTRB(22, 15, 22, 24),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                dateTimeText,
                 style: const TextStyle(
-                  color: _AppColors.textRate,
+                  color: _AppColors.textDate,
                   fontSize: 16,
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 6),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: Text(
+                  rateText,
+                  key: ValueKey(rateText),
+                  style: const TextStyle(
+                    color: _AppColors.textRate,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+}
+
+class HistoryChartBottomSheet extends StatefulWidget {
+  const HistoryChartBottomSheet({
+    required this.baseCurrency,
+    required this.targetCurrency,
+    required this.lastUpdated,
+    required this.repository,
+    this.latestRate,
+  });
+
+  final String baseCurrency;
+  final String targetCurrency;
+  final double? latestRate;
+  final DateTime lastUpdated;
+  final HistoricalRatesRepository repository;
+
+  @override
+  State<HistoryChartBottomSheet> createState() => _HistoryChartBottomSheetState();
+}
+
+class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
+  final Map<_HistoryInterval, List<HistoricalRate>> _cache = {};
+  _HistoryInterval _interval = _HistoryInterval.days30;
+  bool _loading = true;
+  List<HistoricalRate> _currentRates = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInterval(_interval);
+  }
+
+  Future<void> _loadInterval(_HistoryInterval interval) async {
+    final cached = _cache[interval];
+    setState(() {
+      _interval = interval;
+      _loading = cached == null;
+      _currentRates = cached ?? _currentRates;
+    });
+
+    if (cached != null) return;
+
+    final rates = await widget.repository.loadLatest(
+      base: widget.baseCurrency,
+      target: widget.targetCurrency,
+      days: interval.days,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _cache[interval] = rates;
+      _currentRates = rates;
+      _loading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.9,
+      minChildSize: 0.5,
+      builder: (context, controller) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: _AppColors.bgMain,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+          ),
+          padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
+          child: Column(
+            children: [
+              _buildHeader(),
+              const SizedBox(height: 12),
+              _buildIntervals(),
+              const SizedBox(height: 18),
+              Expanded(
+                child: SingleChildScrollView(
+                  controller: controller,
+                  child: _buildChartArea(),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHeader() {
+    final subtitle = _formatSubtitle();
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '${widget.baseCurrency} → ${widget.targetCurrency}',
+                style: const TextStyle(
+                  color: _AppColors.textMain,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  color: _AppColors.textRate,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => Navigator.of(context).pop(),
+          child: const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Icon(
+              Icons.close,
+              color: _AppColors.textMain,
+              size: 24,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildIntervals() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: _HistoryInterval.values.map((interval) {
+        final isActive = interval == _interval;
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(
+              right: interval == _HistoryInterval.values.last ? 0 : 8,
+            ),
+            child: GestureDetector(
+              onTap: () => _loadInterval(interval),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: isActive ? _AppColors.keyOpBg : const Color(0xFF3E3E3E),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Text(
+                    interval.label,
+                    style: const TextStyle(
+                      color: _AppColors.textMain,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildChartArea() {
+    if (_loading) {
+      return const SizedBox(
+        height: 280,
+        child: Center(
+          child: CircularProgressIndicator(color: _AppColors.textMain),
+        ),
+      );
+    }
+
+    if (_currentRates.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF3E3E3E),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Недостаточно данных для отображения графика.',
+              style: TextStyle(
+                color: _AppColors.textMain,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Попробуйте другой период.',
+              style: TextStyle(
+                color: _AppColors.textRate,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    final minRate = _currentRates.map((r) => r.rate).reduce((a, b) => a < b ? a : b);
+    final maxRate = _currentRates.map((r) => r.rate).reduce((a, b) => a > b ? a : b);
+    final padding = ((maxRate - minRate) * 0.05).clamp(0.0001, double.infinity);
+    final minY = minRate - padding;
+    final maxY = maxRate + padding;
+
+    final spots = _currentRates
+        .map((rate) => FlSpot(
+              rate.date.millisecondsSinceEpoch.toDouble(),
+              rate.rate,
+            ))
+        .toList();
+
+    final xStart = spots.first.x;
+    final xEnd = spots.last.x;
+    final interval = ((xEnd - xStart) / 3).clamp(1, double.infinity);
+
+    return SizedBox(
+      height: 320,
+      child: Padding(
+        padding: const EdgeInsets.only(right: 6),
+        child: LineChart(
+          LineChartData(
+            minY: minY,
+            maxY: maxY,
+            gridData: FlGridData(show: false),
+            lineTouchData: LineTouchData(
+              touchTooltipData: LineTouchTooltipData(
+                tooltipBgColor: const Color(0xFF1E1E1E),
+                tooltipRoundedRadius: 12,
+                getTooltipItems: (touchedSpots) {
+                  return touchedSpots.map((barSpot) {
+                    final date = DateTime.fromMillisecondsSinceEpoch(barSpot.x.toInt());
+                    final formattedDate = _formatFullDate(date);
+                    final value = barSpot.y.toStringAsFixed(4);
+                    return LineTooltipItem(
+                      '$formattedDate — $value',
+                      const TextStyle(
+                        color: _AppColors.textMain,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    );
+                  }).toList();
+                },
+              ),
+            ),
+            titlesData: FlTitlesData(
+              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 44,
+                  getTitlesWidget: (value, _) {
+                    return Text(
+                      value.toStringAsFixed(4),
+                      style: const TextStyle(
+                        color: _AppColors.textRate,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 36,
+                  interval: interval,
+                  getTitlesWidget: (value, meta) {
+                    final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
+                    return SideTitleWidget(
+                      axisSide: meta.axisSide,
+                      child: Text(
+                        _formatShortDate(date),
+                        style: const TextStyle(
+                          color: _AppColors.textRate,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            borderData: FlBorderData(show: false),
+            lineBarsData: [
+              LineChartBarData(
+                isCurved: true,
+                barWidth: 2,
+                dotData: const FlDotData(show: false),
+                color: _AppColors.keyOpBg,
+                belowBarData: BarAreaData(
+                  show: true,
+                  gradient: LinearGradient(
+                    colors: [
+                      _AppColors.keyOpBg.withOpacity(0.25),
+                      _AppColors.keyOpBg.withOpacity(0.05),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+                spots: spots,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatSubtitle() {
+    final rateText = widget.latestRate != null
+        ? widget.latestRate!.toStringAsFixed(4)
+        : '--';
+    final updatedText = _formatUpdatedDate(widget.lastUpdated);
+    return 'Текущий курс: $rateText | Обновлено: $updatedText';
+  }
+
+  String _formatUpdatedDate(DateTime date) {
+    final now = DateTime.now();
+    final isToday = now.year == date.year && now.month == date.month && now.day == date.day;
+    final hours = date.hour.toString().padLeft(2, '0');
+    final minutes = date.minute.toString().padLeft(2, '0');
+    if (isToday) return 'сегодня в $hours:$minutes';
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day.$month.${date.year} в $hours:$minutes';
+  }
+
+  String _formatShortDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day.$month';
+  }
+
+  String _formatFullDate(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return '$day.$month.${date.year}';
+  }
+}
+
+enum _HistoryInterval {
+  days30,
+  months3,
+  months6,
+  year1,
+}
+
+extension on _HistoryInterval {
+  String get label {
+    switch (this) {
+      case _HistoryInterval.days30:
+        return '30 дней';
+      case _HistoryInterval.months3:
+        return '3 месяца';
+      case _HistoryInterval.months6:
+        return '6 месяцев';
+      case _HistoryInterval.year1:
+        return '1 год';
+    }
+  }
+
+  int get days {
+    switch (this) {
+      case _HistoryInterval.days30:
+        return 30;
+      case _HistoryInterval.months3:
+        return 90;
+      case _HistoryInterval.months6:
+        return 180;
+      case _HistoryInterval.year1:
+        return 365;
+    }
   }
 }
 

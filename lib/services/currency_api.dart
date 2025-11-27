@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../models/historical_rate.dart';
+
 class LatestRatesResponse {
   LatestRatesResponse({
     required this.rates,
@@ -75,5 +77,49 @@ class CurrencyApi {
     }
 
     return amount * (toRate / fromRate);
+  }
+
+  Future<List<HistoricalRate>> getHistoricalRates({
+    required String base,
+    required String target,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    final start = _formatDate(startDate);
+    final end = _formatDate(endDate);
+    final uri = Uri.parse('$_baseUrl/$start..$end?from=$base&to=$target');
+    final response = await _client.get(uri);
+
+    if (response.statusCode != 200) {
+      throw http.ClientException('Failed to fetch historical rates', uri);
+    }
+
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    final rawRates = decoded['rates'] as Map<String, dynamic>;
+
+    final result = <HistoricalRate>[];
+    rawRates.forEach((dateString, value) {
+      final rateValue = (value as Map<String, dynamic>)[target];
+      if (rateValue != null) {
+        result.add(
+          HistoricalRate(
+            date: DateTime.parse(dateString as String),
+            base: base,
+            target: target,
+            rate: (rateValue as num).toDouble(),
+          ),
+        );
+      }
+    });
+
+    result.sort((a, b) => a.date.compareTo(b.date));
+    return result;
+  }
+
+  String _formatDate(DateTime date) {
+    final normalized = DateTime(date.year, date.month, date.day);
+    final month = normalized.month.toString().padLeft(2, '0');
+    final day = normalized.day.toString().padLeft(2, '0');
+    return '${normalized.year}-$month-$day';
   }
 }
