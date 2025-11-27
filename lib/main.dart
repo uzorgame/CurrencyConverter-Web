@@ -193,6 +193,106 @@ class AppStrings {
           'For full details, please read our complete Privacy Policy at:',
       'privacyPolicyUrl': 'https://uzorgame.github.io/privacy-policy-converter',
     },
+    'DE': {
+      'appTitle': 'Währungsrechner+',
+      'settingsTitle': 'Einstellungen',
+      'language': 'Sprache',
+      'about': 'Informationen',
+      'privacyPolicy': 'Datenschutzrichtlinie',
+      'aboutCompany': 'UzorGame Inc',
+      'versionLabel': 'Version $kAppVersion',
+      'privacyIntro':
+          'Die App sammelt keine personenbezogenen Daten. Wir fragen weder nach Ihrem Namen, Ihrer E-Mail, Telefonnummer, Kontakten noch nach Ihrem genauen Standort.',
+      'privacyNoAds':
+          'Wir schalten keine Werbung, erstellen keine Konten und laden Ihre Daten nicht auf unsere Server hoch. Alle Einstellungen bleiben lokal auf Ihrem Gerät.',
+      'privacyFirebase':
+          'Die App verwendet Firebase Analytics, um grundlegende Nutzung zu verstehen (z. B. Abstürze, Bildschirmaufrufe). Dazu gehören technische Daten wie Gerätetyp, App-Version und Land (grob). Firebase stellt uns weder Ihre Identität noch Ihre IP-Adresse zur Verfügung.',
+      'privacyCurrencyApi':
+          'Die App ruft Wechselkurse von einer externen Currency API ab. Diese Anfragen enthalten keine personenbezogenen Informationen oder Kennungen.',
+      'privacyNoSell': 'Wir verkaufen oder teilen keine Benutzerdaten.',
+      'privacyFullDetails': 'Die vollständige Richtlinie finden Sie hier:',
+      'privacyPolicyUrl': 'https://uzorgame.github.io/privacy-policy-converter',
+    },
+    'FR': {
+      'appTitle': 'Convertisseur de devises+',
+      'settingsTitle': 'Paramètres',
+      'language': 'Langue',
+      'about': 'À propos',
+      'privacyPolicy': 'Politique de confidentialité',
+      'aboutCompany': 'UzorGame Inc',
+      'versionLabel': 'Version $kAppVersion',
+      'privacyIntro':
+          "L’application ne collecte pas de données personnelles. Nous ne demandons pas votre nom, votre e-mail, votre numéro de téléphone, vos contacts ou votre position précise.",
+      'privacyNoAds':
+          "Nous n’affichons pas de publicités, ne créons pas de comptes et ne téléchargeons pas vos données sur nos serveurs. Tous les réglages restent localement sur votre appareil.",
+      'privacyFirebase':
+          "L’application utilise Firebase Analytics pour comprendre l’utilisation de base (p. ex. crashs, vues d’écran). Cela inclut des données techniques telles que le type d’appareil, la version de l’app et le pays (approximatif). Firebase ne nous fournit ni votre identité ni votre adresse IP.",
+      'privacyCurrencyApi':
+          "L’application demande les taux de change à une API Currency externe. Ces requêtes ne contiennent pas d’informations personnelles ni d’identifiants.",
+      'privacyNoSell': "Nous ne vendons ni ne partageons les données des utilisateurs.",
+      'privacyFullDetails': 'Pour plus de détails, consultez la politique complète ici :',
+      'privacyPolicyUrl': 'https://uzorgame.github.io/privacy-policy-converter',
+    },
+    'IT': {
+      'appTitle': 'Convertitore di valuta+',
+      'settingsTitle': 'Impostazioni',
+      'language': 'Lingua',
+      'about': 'Informazioni',
+      'privacyPolicy': 'Informativa sulla privacy',
+      'aboutCompany': 'UzorGame Inc',
+      'versionLabel': 'Versione $kAppVersion',
+      'privacyIntro':
+          "L’app non raccoglie dati personali. Non chiediamo il tuo nome, e-mail, numero di telefono, contatti o posizione precisa.",
+      'privacyNoAds':
+          "Non mostriamo pubblicità, non creiamo account e non carichiamo i tuoi dati sui nostri server. Tutte le impostazioni rimangono locali sul tuo dispositivo.",
+      'privacyFirebase':
+          "L’app utilizza Firebase Analytics per comprendere l’utilizzo di base (ad es. crash, visualizzazioni di schermate). Ciò include dati tecnici come tipo di dispositivo, versione dell’app e paese (approssimativo). Firebase non ci fornisce la tua identità o il tuo indirizzo IP.",
+      'privacyCurrencyApi':
+          "L’app richiede i tassi di cambio da un’API Currency esterna. Queste richieste non includono informazioni personali o identificatori.",
+      'privacyNoSell': 'Non vendiamo né condividiamo i dati degli utenti.',
+      'privacyFullDetails': 'Per i dettagli completi, leggi la politica completa qui:',
+      'privacyPolicyUrl': 'https://uzorgame.github.io/privacy-policy-converter',
+    },
+    'ES': {
+      'appTitle': 'Convertidor de divisas+',
+      'settingsTitle': 'Configuración',
+      'language': 'Idioma',
+      'about': 'Acerca de',
+      'privacyPolicy': 'Política de privacidad',
+      'aboutCompany': 'UzorGame Inc',
+      'versionLabel': 'Versión $kAppVersion',
+      'privacyIntro':
+          'La aplicación no recopila datos personales. No solicitamos tu nombre, correo electrónico, número de teléfono, contactos ni tu ubicación precisa.',
+      'privacyNoAds':
+          'No mostramos anuncios, no creamos cuentas y no subimos tus datos a nuestros servidores. Todas las configuraciones permanecen localmente en tu dispositivo.',
+      'privacyFirebase':
+          'La aplicación utiliza Firebase Analytics para comprender el uso básico (p. ej., fallos, vistas de pantalla). Esto incluye datos técnicos como tipo de dispositivo, versión de la aplicación y país (aproximado). Firebase no nos proporciona tu identidad ni tu dirección IP.',
+      'privacyCurrencyApi':
+          'La aplicación solicita tasas de cambio a una API de Currency externa. Estas solicitudes no incluyen información personal ni identificadores.',
+      'privacyNoSell': 'No vendemos ni compartimos datos de los usuarios.',
+      'privacyFullDetails': 'Para más detalles, consulta la política completa aquí:',
+      'privacyPolicyUrl': 'https://uzorgame.github.io/privacy-policy-converter',
+    },
+    'RU': {
+      'appTitle': 'Конвертер валют+',
+      'settingsTitle': 'Настройки',
+      'language': 'Язык',
+      'about': 'О приложении',
+      'privacyPolicy': 'Политика конфиденциальности',
+      'aboutCompany': 'UzorGame Inc',
+      'versionLabel': 'Версия $kAppVersion',
+      'privacyIntro':
+          'Приложение не собирает персональные данные. Мы не спрашиваем ваше имя, email, номер телефона, контакты или точное местоположение.',
+      'privacyNoAds':
+          'Мы не показываем рекламу, не создаём аккаунты и не загружаем ваши данные на наши серверы. Все настройки остаются локально на вашем устройстве.',
+      'privacyFirebase':
+          'Приложение использует Firebase Analytics, чтобы понимать базовое использование (например, сбои, просмотры экранов). Это включает технические данные, такие как тип устройства, версия приложения и страна (примерно). Firebase не предоставляет нам вашу личность или IP-адрес.',
+      'privacyCurrencyApi':
+          'Приложение запрашивает курсы валют у внешнего Currency API. Эти запросы не содержат персональной информации или идентификаторов.',
+      'privacyNoSell': 'Мы не продаём и не передаём данные пользователей.',
+      'privacyFullDetails': 'Полный текст политики доступен по ссылке:',
+      'privacyPolicyUrl': 'https://uzorgame.github.io/privacy-policy-converter',
+    },
     'UK': {
       'appTitle': 'Конвертер валют',
       'settingsTitle': 'Налаштування',
@@ -1342,6 +1442,11 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   static const Map<String, String> _languages = {
     'EN': 'English',
+    'DE': 'Deutsch',
+    'FR': 'Français',
+    'IT': 'Italiano',
+    'ES': 'Español',
+    'RU': 'Русский',
     'UK': 'Українська',
   };
 
