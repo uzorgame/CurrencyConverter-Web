@@ -438,15 +438,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                 height: 44,
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => SettingsPage(
-                          languageNotifier: widget.languageNotifier,
-                        ),
-                      ),
-                    );
-                  },
+                  onTap: _openSettingsSheet,
                   child: const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 14),
                     child: Icon(
@@ -780,6 +772,40 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     } else {
       _bottomDisplay = formatAmount(topValue * rate);
     }
+  }
+
+  void _openSettingsSheet() {
+    final language = widget.languageNotifier.value;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return _SettingsBottomSheet(
+          language: language,
+          onLanguageTap: () async {
+            Navigator.of(sheetContext).pop();
+            final selected =
+                await showLanguageSelectorSheet(context, language);
+            if (selected != null) {
+              widget.languageNotifier.value = selected;
+            }
+          },
+          onAboutTap: () async {
+            Navigator.of(sheetContext).pop();
+            await showAboutDialogForLanguage(context, language);
+          },
+          onPrivacyPolicyTap: () {
+            Navigator.of(sheetContext).pop();
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => PrivacyPolicyPage(language: language),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   void _persistTopAmount() {
@@ -1416,6 +1442,238 @@ class _AppColors {
   static const dividerLine = Color(0xFF4E443A);
 }
 
+const Map<String, String> _settingsLanguages = {
+  'EN': 'English',
+  'DE': 'Deutsch',
+  'FR': 'Français',
+  'IT': 'Italiano',
+  'ES': 'Español',
+  'RU': 'Русский',
+  'UK': 'Українська',
+};
+
+Future<String?> showLanguageSelectorSheet(
+  BuildContext context,
+  String currentLanguage,
+) {
+  return showModalBottomSheet<String>(
+    context: context,
+    backgroundColor: _AppColors.bgMain,
+    builder: (_) {
+      return SafeArea(
+        child: ListView.separated(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          itemBuilder: (context, index) {
+            final entry = _settingsLanguages.entries.elementAt(index);
+            final isSelected = entry.key == currentLanguage;
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => Navigator.of(context).pop(entry.key),
+              child: Container(
+                height: 56,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: isSelected ? _AppColors.keyRow1Bg : Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      entry.value,
+                      style: const TextStyle(
+                        color: _AppColors.textMain,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (isSelected)
+                      const Icon(
+                        Icons.check,
+                        color: _AppColors.textMain,
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          itemCount: _settingsLanguages.length,
+        ),
+      );
+    },
+  );
+}
+
+Future<void> showAboutDialogForLanguage(
+  BuildContext context,
+  String language,
+) async {
+  await showDialog<void>(
+    context: context,
+    builder: (_) {
+      return AlertDialog(
+        backgroundColor: _AppColors.bgMain,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Center(
+          child: Text(
+            AppStrings.of(language, 'about'),
+            style: const TextStyle(
+              color: _AppColors.textMain,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              AppStrings.of(language, 'aboutCompany'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: _AppColors.textMain,
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              AppStrings.of(language, 'versionLabel'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: _AppColors.textRate,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          TextButton(
+            onPressed: Navigator.of(context).pop,
+            child: const Text(
+              'OK',
+              style: TextStyle(
+                color: _AppColors.textMain,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+class _SettingsBottomSheet extends StatelessWidget {
+  const _SettingsBottomSheet({
+    required this.language,
+    required this.onLanguageTap,
+    required this.onAboutTap,
+    required this.onPrivacyPolicyTap,
+  });
+
+  final String language;
+  final VoidCallback onLanguageTap;
+  final VoidCallback onAboutTap;
+  final VoidCallback onPrivacyPolicyTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.transparent,
+      child: Container(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          16,
+          20,
+          20 + MediaQuery.of(context).padding.bottom,
+        ),
+        decoration: const BoxDecoration(
+          color: _AppColors.bgMain,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _SettingsSheetTile(
+                icon: Icons.language,
+                title: AppStrings.of(language, 'language'),
+                onTap: onLanguageTap,
+              ),
+              const SizedBox(height: 12),
+              _SettingsSheetTile(
+                icon: Icons.info_outline,
+                title: AppStrings.of(language, 'about'),
+                onTap: onAboutTap,
+              ),
+              const SizedBox(height: 12),
+              _SettingsSheetTile(
+                icon: Icons.privacy_tip_outlined,
+                title: AppStrings.of(language, 'privacyPolicy'),
+                onTap: onPrivacyPolicyTap,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsSheetTile extends StatelessWidget {
+  const _SettingsSheetTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        height: 60,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: _AppColors.textMain,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: _AppColors.textMain,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: _AppColors.textMain,
+              size: 16,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 String _formatDateTime(DateTime dateTime) {
   final year = dateTime.year.toString().padLeft(4, '0');
   final month = _twoDigits(dateTime.month);
@@ -1440,16 +1698,6 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  static const Map<String, String> _languages = {
-    'EN': 'English',
-    'DE': 'Deutsch',
-    'FR': 'Français',
-    'IT': 'Italiano',
-    'ES': 'Español',
-    'RU': 'Русский',
-    'UK': 'Українська',
-  };
-
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<String>(
@@ -1474,15 +1722,13 @@ class _SettingsPageState extends State<SettingsPage> {
                           return _SettingsTile(
                             title: AppStrings.of(language, 'language'),
                             trailingText:
-                                _languages[language] ?? language,
-                            onTap: () =>
-                                _showLanguageSelector(language),
+                                _settingsLanguages[language] ?? language,
+                            onTap: () => _showLanguageSelector(language),
                           );
                         case 1:
                           return _SettingsTile(
                             title: AppStrings.of(language, 'about'),
-                            onTap: () =>
-                                _showAboutDialog(language),
+                            onTap: () => _showAboutDialog(language),
                           );
                         case 2:
                           return _SettingsTile(
@@ -1513,53 +1759,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _showLanguageSelector(String currentLanguage) async {
-    final selected = await showModalBottomSheet<String>(
-      context: context,
-      backgroundColor: _AppColors.bgMain,
-      builder: (_) {
-        return SafeArea(
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-            itemBuilder: (context, index) {
-              final entry = _languages.entries.elementAt(index);
-              final isSelected = entry.key == currentLanguage;
-              return GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => Navigator.of(context).pop(entry.key),
-                child: Container(
-                  height: 56,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: isSelected ? _AppColors.keyRow1Bg : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Text(
-                        entry.value,
-                        style: const TextStyle(
-                          color: _AppColors.textMain,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const Spacer(),
-                      if (isSelected)
-                        const Icon(
-                          Icons.check,
-                          color: _AppColors.textMain,
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
-            separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemCount: _languages.length,
-          ),
-        );
-      },
-    );
+    final selected = await showLanguageSelectorSheet(context, currentLanguage);
 
     if (selected == null) return;
 
@@ -1567,64 +1767,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _showAboutDialog(String language) async {
-    await showDialog<void>(
-      context: context,
-      builder: (_) {
-        return AlertDialog(
-          backgroundColor: _AppColors.bgMain,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: Center(
-            child: Text(
-              AppStrings.of(language, 'about'),
-              style: const TextStyle(
-                color: _AppColors.textMain,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                AppStrings.of(language, 'aboutCompany'),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: _AppColors.textMain,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                AppStrings.of(language, 'versionLabel'),
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: _AppColors.textRate,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          actionsAlignment: MainAxisAlignment.center,
-          actions: [
-            TextButton(
-              onPressed: Navigator.of(context).pop,
-              child: const Text(
-                'OK',
-                style: TextStyle(
-                  color: _AppColors.textMain,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+    await showAboutDialogForLanguage(context, language);
   }
 }
 
