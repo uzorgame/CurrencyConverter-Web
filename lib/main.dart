@@ -1049,7 +1049,7 @@ class _RatePanel extends StatelessWidget {
     return Container(
       width: double.infinity,
       color: _AppColors.bgMain,
-      padding: const EdgeInsets.fromLTRB(22, 20, 22, 32),
+      padding: const EdgeInsets.fromLTRB(22, 15, 22, 24),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
