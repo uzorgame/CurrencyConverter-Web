@@ -10,6 +10,40 @@ class CurrencyRepository {
   final CurrencyApi api;
   final SharedPreferences prefs;
 
+  static const _supportedCurrencies = {
+    'AUD',
+    'BGN',
+    'BRL',
+    'CAD',
+    'CHF',
+    'CNY',
+    'CZK',
+    'DKK',
+    'EUR',
+    'GBP',
+    'HKD',
+    'HUF',
+    'IDR',
+    'ILS',
+    'INR',
+    'ISK',
+    'JPY',
+    'KRW',
+    'MXN',
+    'MYR',
+    'NOK',
+    'NZD',
+    'PHP',
+    'PLN',
+    'RON',
+    'SEK',
+    'SGD',
+    'THB',
+    'TRY',
+    'USD',
+    'ZAR',
+  };
+
   static const _ratesDateKey = 'cached_rates_date';
   static const _ratesCacheKey = 'cached_rates_cache_key';
   static const _currenciesKey = 'cached_currencies';
@@ -53,8 +87,8 @@ class CurrencyRepository {
   Future<void> loadCurrencies() async {
     try {
       final loaded = await api.getCurrencies();
-      _currencyNames = loaded;
-      _currencies = loaded.keys.toList()..sort();
+      _currencyNames = _filterSupportedCurrencies(loaded);
+      _currencies = _currencyNames.keys.toList()..sort();
       await prefs.setString(_currenciesKey, jsonEncode(_currencies));
       await prefs.setString(_currencyNamesKey, jsonEncode(_currencyNames));
     } catch (_) {
@@ -63,9 +97,12 @@ class CurrencyRepository {
       if (cached == null || cachedNames == null) rethrow;
       _currencies = List<String>.from(jsonDecode(cached) as List<dynamic>);
       final decodedNames = jsonDecode(cachedNames) as Map<String, dynamic>;
-      _currencyNames = decodedNames.map(
-        (key, value) => MapEntry(key, value as String),
+      _currencyNames = _filterSupportedCurrencies(
+        decodedNames.map(
+          (key, value) => MapEntry(key, value as String),
+        ),
       );
+      _currencies = _currencyNames.keys.toList()..sort();
     }
   }
 
@@ -82,6 +119,12 @@ class CurrencyRepository {
     }
 
     return amount * (toRate / fromRate);
+  }
+
+  Map<String, String> _filterSupportedCurrencies(Map<String, String> source) {
+    return Map.fromEntries(
+      source.entries.where((entry) => _supportedCurrencies.contains(entry.key)),
+    );
   }
 
   Future<void> _cacheRates(DateTime cacheDate, {DateTime? lastUpdatedDate}) async {
