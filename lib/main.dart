@@ -1049,7 +1049,7 @@ class _RatePanel extends StatelessWidget {
     return Container(
       width: double.infinity,
       color: _AppColors.bgMain,
-      padding: const EdgeInsets.fromLTRB(22, 20, 22, 32),
+      padding: const EdgeInsets.fromLTRB(16.5, 15, 16.5, 24),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1058,16 +1058,16 @@ class _RatePanel extends StatelessWidget {
               dateTimeText,
               style: const TextStyle(
                 color: _AppColors.textDate,
-                fontSize: 16,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4.5),
             Text(
               rateText,
               style: const TextStyle(
                 color: _AppColors.textRate,
-                fontSize: 16,
+                fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
             ),
