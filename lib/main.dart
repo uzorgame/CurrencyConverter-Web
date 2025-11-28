@@ -1737,19 +1737,91 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
       return result;
     }
 
-    final xTitleCount = math.min(5, math.max(2, spots.length));
-    final singlePoint = xStart == xEnd;
-    final effectiveXTitleCount = singlePoint ? 1 : xTitleCount;
-    final xInterval = effectiveXTitleCount > 1
-        ? (xEnd - xStart) / (effectiveXTitleCount - 1)
-        : 1.0;
-    final xTitleValues = _expandedTitleValues(
-      List.generate(
-        effectiveXTitleCount,
-        (index) => xStart + xInterval * index,
-      ),
-    );
-    final xTolerance = xInterval * 0.01;
+    List<DateTime> _generateAnchoredDates({
+      required DateTime start,
+      required DateTime end,
+      Duration? step,
+      int? monthStep,
+    }) {
+      final dates = <DateTime>{start};
+
+      if (step != null) {
+        var current = start.add(step);
+        while (current.isBefore(end)) {
+          dates.add(current);
+          current = current.add(step);
+        }
+      } else if (monthStep != null) {
+        var current = DateTime(start.year, start.month + monthStep, start.day);
+        while (current.isBefore(end)) {
+          dates.add(current);
+          current = DateTime(current.year, current.month + monthStep, current.day);
+        }
+      }
+
+      dates.add(end);
+      final sorted = dates.toList()..sort();
+      return sorted;
+    }
+
+    List<DateTime> _generateXTicksForInterval() {
+      final startDate = DateTime.fromMillisecondsSinceEpoch(xStart.toInt());
+      final endDate = DateTime.fromMillisecondsSinceEpoch(xEnd.toInt());
+
+      switch (_interval) {
+        case _HistoryInterval.days30:
+          return _generateAnchoredDates(
+            start: startDate,
+            end: endDate,
+            step: const Duration(days: 7),
+          );
+        case _HistoryInterval.months3:
+          return _generateAnchoredDates(
+            start: startDate,
+            end: endDate,
+            monthStep: 1,
+          );
+        case _HistoryInterval.months6:
+          return _generateAnchoredDates(
+            start: startDate,
+            end: endDate,
+            monthStep: 2,
+          );
+        case _HistoryInterval.year1:
+          return _generateAnchoredDates(
+            start: startDate,
+            end: endDate,
+            monthStep: 3,
+          );
+        case _HistoryInterval.days7:
+          final xTitleCount = math.min(5, math.max(2, spots.length));
+          final singlePoint = xStart == xEnd;
+          final effectiveXTitleCount = singlePoint ? 1 : xTitleCount;
+          final xInterval = effectiveXTitleCount > 1
+              ? (xEnd - xStart) / (effectiveXTitleCount - 1)
+              : 1.0;
+          return List.generate(
+            effectiveXTitleCount,
+            (index) => DateTime.fromMillisecondsSinceEpoch(
+              (xStart + xInterval * index).toInt(),
+            ),
+          );
+      }
+    }
+
+    final xTickDates = _generateXTicksForInterval();
+    final xTitleValues = xTickDates
+        .map((date) => date.millisecondsSinceEpoch.toDouble())
+        .toSet()
+        .toList()
+      ..sort();
+    final xDeltas = <double>[];
+    for (var i = 0; i < xTitleValues.length - 1; i++) {
+      xDeltas.add(xTitleValues[i + 1] - xTitleValues[i]);
+    }
+    final xInterval = xDeltas.isNotEmpty ? xDeltas.reduce(math.min) : 1.0;
+    final xTolerance = xInterval * 0.05;
+    final relaxedOverlapForX = xTitleValues.length <= 5;
 
     final yTitleCount = 5;
     final yInterval = yTitleCount > 1 ? (maxY - minY) / (yTitleCount - 1) : 1.0;
@@ -1788,7 +1860,8 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
       return fraction * axisExtent;
     }
 
-    final xLabelTracker = _LabelOverlapTracker(minimumLabelSpacing);
+    final xLabelTracker =
+        _LabelOverlapTracker(relaxedOverlapForX ? 0 : minimumLabelSpacing);
     final yLabelTracker = _LabelOverlapTracker(minimumLabelSpacing);
 
     return SizedBox(
@@ -1915,7 +1988,7 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
                       isHorizontal: true,
                     );
 
-                    if (xLabelTracker.isOverlapping(bounds)) {
+                    if (!relaxedOverlapForX && xLabelTracker.isOverlapping(bounds)) {
                       return const SizedBox.shrink();
                     }
                     return SideTitleWidget(
