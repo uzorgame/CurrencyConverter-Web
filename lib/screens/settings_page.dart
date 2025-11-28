@@ -40,8 +40,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         case 0:
                           return _SettingsTile(
                             title: AppStrings.of(language, 'language'),
-                            trailingText:
-                                _settingsLanguages[language] ?? language,
+                            trailingText: settingsLanguages[language] ?? language,
                             onTap: () => _showLanguageSelector(language),
                           );
                         case 1:

@@ -15,7 +15,7 @@ class Currency {
   final String? flag;
 }
 
-const List<Currency> _currencies = [
+const List<Currency> currencies = [
   Currency(code: 'AUD', name: 'Australian Dollar'),
   Currency(code: 'BGN', name: 'Bulgarian Lev'),
   Currency(code: 'BRL', name: 'Brazilian Real'),

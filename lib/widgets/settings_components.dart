@@ -2,7 +2,7 @@ import 'package:currency/utils/app_colors.dart';
 import 'package:currency/utils/app_strings.dart';
 import 'package:flutter/material.dart';
 
-const Map<String, String> _settingsLanguages = {
+const Map<String, String> settingsLanguages = {
   'EN': 'English',
   'DE': 'Deutsch',
   'FR': 'Français',
@@ -24,7 +24,7 @@ Future<String?> showLanguageSelectorSheet(
         child: ListView.separated(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           itemBuilder: (context, index) {
-            final entry = _settingsLanguages.entries.elementAt(index);
+            final entry = settingsLanguages.entries.elementAt(index);
             final isSelected = entry.key == currentLanguage;
             return GestureDetector(
               behavior: HitTestBehavior.opaque,
@@ -58,7 +58,7 @@ Future<String?> showLanguageSelectorSheet(
             );
           },
           separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemCount: _settingsLanguages.length,
+          itemCount: settingsLanguages.length,
         ),
       );
     },
@@ -124,8 +124,8 @@ Future<void> showAboutDialogForLanguage(
   );
 }
 
-class _SettingsBottomSheet extends StatelessWidget {
-  const _SettingsBottomSheet({
+class SettingsBottomSheet extends StatelessWidget {
+  const SettingsBottomSheet({
     required this.onLanguageTap,
     required this.onAboutTap,
     required this.onPrivacyPolicyTap,
