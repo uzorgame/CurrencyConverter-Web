@@ -47,6 +47,16 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   bool _awaitingSecondOperand = false;
   bool _syncedWithProvider = false;
 
+  // ⚡ ОПТИМИЗАЦИЯ: Кэширование для избежания лишних вычислений
+  List<Currency>? _cachedCurrencies;
+  Map<String, Currency>? _currencyMap;
+  double? _cachedRate;
+  String _cachedRateKey = '';
+  String _cachedRateText = '';
+  
+  // ⚡ ОПТИМИЗАЦИЯ: Static RegExp (создаётся один раз)
+  static final _digitRegex = RegExp(r'^[0-9]$');
+
   @override
   Widget build(BuildContext context) {
     final currencyProvider = context.watch<CurrencyProvider>();
