@@ -1,7 +1,9 @@
+import 'package:currency/main.dart';
 import 'package:currency/models/historical_rate.dart';
 import 'package:currency/providers/currency_provider.dart';
 import 'package:currency/repositories/historical_rates_repository.dart';
 import 'package:currency/screens/currency_picker_page.dart';
+import 'package:currency/screens/privacy_policy_page.dart';
 import 'package:currency/screens/settings_page.dart';
 import 'package:currency/utils/active_field.dart';
 import 'package:currency/utils/amount_formatter.dart';
@@ -11,6 +13,7 @@ import 'package:currency/utils/currency_utils.dart';
 import 'package:currency/utils/date_utils.dart';
 import 'package:currency/utils/key_definition.dart';
 import 'package:currency/widgets/converter_widgets.dart';
+import 'package:currency/widgets/settings_components.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -124,7 +127,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
           .toList();
     }
 
-    return _currencies;
+    return currencies;
   }
 
   void _maybeSyncWithProvider(
@@ -442,7 +445,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (sheetContext) {
-        return _SettingsBottomSheet(
+        return SettingsBottomSheet(
           language: language,
           onLanguageTap: () async {
             Navigator.of(sheetContext).pop();
