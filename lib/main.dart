@@ -265,6 +265,11 @@ class AppStrings {
       'searchHint': 'Search',
       'ok': 'OK',
       'linkOpenError': 'Could not open the link',
+      'chartSubtitle': 'Current rate: {rate} | Updated: {updated}',
+      'chartUpdatedToday': 'today at {time}',
+      'chartUpdatedDate': '{date} at {time}',
+      'chartNoDataTitle': 'Not enough data to display the chart.',
+      'chartNoDataSubtitle': 'Try a different period.',
     },
     'DE': {
       ..._englishOnlyValues,
@@ -276,6 +281,11 @@ class AppStrings {
       'searchHint': 'Suche',
       'ok': 'OK',
       'linkOpenError': 'Link konnte nicht geöffnet werden',
+      'chartSubtitle': 'Aktueller Kurs: {rate} | Aktualisiert: {updated}',
+      'chartUpdatedToday': 'heute um {time}',
+      'chartUpdatedDate': '{date} um {time}',
+      'chartNoDataTitle': 'Nicht genügend Daten, um das Diagramm anzuzeigen.',
+      'chartNoDataSubtitle': 'Versuche einen anderen Zeitraum.',
     },
     'FR': {
       ..._englishOnlyValues,
@@ -287,6 +297,11 @@ class AppStrings {
       'searchHint': 'Recherche',
       'ok': 'OK',
       'linkOpenError': 'Impossible d’ouvrir le lien',
+      'chartSubtitle': 'Taux actuel : {rate} | Mis à jour : {updated}',
+      'chartUpdatedToday': 'aujourd’hui à {time}',
+      'chartUpdatedDate': '{date} à {time}',
+      'chartNoDataTitle': 'Pas assez de données pour afficher le graphique.',
+      'chartNoDataSubtitle': 'Essayez une autre période.',
     },
     'IT': {
       ..._englishOnlyValues,
@@ -298,6 +313,11 @@ class AppStrings {
       'searchHint': 'Cerca',
       'ok': 'OK',
       'linkOpenError': 'Impossibile aprire il link',
+      'chartSubtitle': 'Tasso attuale: {rate} | Aggiornato: {updated}',
+      'chartUpdatedToday': 'oggi alle {time}',
+      'chartUpdatedDate': '{date} alle {time}',
+      'chartNoDataTitle': 'Dati insufficienti per visualizzare il grafico.',
+      'chartNoDataSubtitle': 'Prova un altro periodo.',
     },
     'ES': {
       ..._englishOnlyValues,
@@ -309,6 +329,11 @@ class AppStrings {
       'searchHint': 'Buscar',
       'ok': 'OK',
       'linkOpenError': 'No se pudo abrir el enlace',
+      'chartSubtitle': 'Tasa actual: {rate} | Actualizado: {updated}',
+      'chartUpdatedToday': 'hoy a las {time}',
+      'chartUpdatedDate': '{date} a las {time}',
+      'chartNoDataTitle': 'Datos insuficientes para mostrar el gráfico.',
+      'chartNoDataSubtitle': 'Prueba con otro período.',
     },
     'RU': {
       ..._englishOnlyValues,
@@ -320,6 +345,11 @@ class AppStrings {
       'searchHint': 'Поиск',
       'ok': 'ОК',
       'linkOpenError': 'Не удалось открыть ссылку',
+      'chartSubtitle': 'Текущий курс: {rate} | Обновлено: {updated}',
+      'chartUpdatedToday': 'сегодня в {time}',
+      'chartUpdatedDate': '{date} в {time}',
+      'chartNoDataTitle': 'Недостаточно данных для отображения графика.',
+      'chartNoDataSubtitle': 'Попробуйте другой период.',
     },
     'UK': {
       ..._englishOnlyValues,
@@ -331,6 +361,11 @@ class AppStrings {
       'searchHint': 'Пошук',
       'ok': 'ОК',
       'linkOpenError': 'Не вдалося відкрити посилання',
+      'chartSubtitle': 'Поточний курс: {rate} | Оновлено: {updated}',
+      'chartUpdatedToday': 'сьогодні о {time}',
+      'chartUpdatedDate': '{date} о {time}',
+      'chartNoDataTitle': 'Недостатньо даних для відображення графіка.',
+      'chartNoDataSubtitle': 'Спробуйте інший період.',
     },
   };
 
@@ -866,6 +901,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     final provider = context.read<CurrencyProvider>();
     final repository = context.read<HistoricalRatesRepository>();
     final rate = _computeRate(_fromCurrency, _toCurrency);
+    final language = widget.languageNotifier.value;
 
     showModalBottomSheet(
       context: context,
@@ -879,6 +915,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
         latestRate: rate,
         lastUpdated: provider.lastUpdated,
         repository: repository,
+        language: language,
       ),
     );
   }
@@ -1530,6 +1567,7 @@ class HistoryChartBottomSheet extends StatefulWidget {
     required this.targetCurrency,
     required this.lastUpdated,
     required this.repository,
+    required this.language,
     this.latestRate,
   });
 
@@ -1538,6 +1576,7 @@ class HistoryChartBottomSheet extends StatefulWidget {
   final double? latestRate;
   final DateTime lastUpdated;
   final HistoricalRatesRepository repository;
+  final String language;
 
   @override
   State<HistoryChartBottomSheet> createState() => _HistoryChartBottomSheetState();
@@ -1734,12 +1773,12 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
           color: const Color(0xFF3E3E3E),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: const Column(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Недостаточно данных для отображения графика.',
-              style: TextStyle(
+              AppStrings.of(widget.language, 'chartNoDataTitle'),
+              style: const TextStyle(
                 color: _AppColors.textMain,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
@@ -1748,8 +1787,8 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
             ),
             SizedBox(height: 8),
             Text(
-              'Попробуйте другой период.',
-              style: TextStyle(
+              AppStrings.of(widget.language, 'chartNoDataSubtitle'),
+              style: const TextStyle(
                 color: _AppColors.textRate,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
@@ -2013,7 +2052,10 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
         ? widget.latestRate!.toStringAsFixed(4)
         : '--';
     final updatedText = _formatUpdatedDate(widget.lastUpdated);
-    return 'Текущий курс: $rateText | Обновлено: $updatedText';
+    final template = AppStrings.of(widget.language, 'chartSubtitle');
+    return template
+        .replaceAll('{rate}', rateText)
+        .replaceAll('{updated}', updatedText);
   }
 
   String _formatUpdatedDate(DateTime date) {
@@ -2021,10 +2063,17 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
     final isToday = now.year == date.year && now.month == date.month && now.day == date.day;
     final hours = date.hour.toString().padLeft(2, '0');
     final minutes = date.minute.toString().padLeft(2, '0');
-    if (isToday) return 'сегодня в $hours:$minutes';
+    final time = '$hours:$minutes';
+    if (isToday) {
+      return AppStrings.of(widget.language, 'chartUpdatedToday')
+          .replaceAll('{time}', time);
+    }
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
-    return '$day.$month.${date.year} в $hours:$minutes';
+    final formattedDate = '$day.$month.${date.year}';
+    return AppStrings.of(widget.language, 'chartUpdatedDate')
+        .replaceAll('{date}', formattedDate)
+        .replaceAll('{time}', time);
   }
 
   String _formatShortDate(DateTime date) {
