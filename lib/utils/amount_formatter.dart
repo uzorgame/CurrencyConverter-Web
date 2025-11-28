@@ -17,9 +17,9 @@ String formatAmount(double value) {
 String _trimTrailingZeros(String value) {
   if (!value.contains('.')) return value;
 
-  // 🔧 ИСПРАВЛЕНО: Экранирование $ для избежания интерполяции
+  // Убираем trailing zeros после десятичной точки
   var trimmed = value.replaceFirst(RegExp(r'\.0+$'), '');
-  trimmed = trimmed.replaceFirst(RegExp(r'(\.\d*?[1-9])0+$'), r'\$1');
+  trimmed = trimmed.replaceFirst(RegExp(r'(\.\d*?[1-9])0+$'), r'$1');
 
   if (trimmed.endsWith('.')) {
     trimmed = trimmed.substring(0, trimmed.length - 1);
