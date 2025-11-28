@@ -244,13 +244,23 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     return result;
   }
 
+  // ⚡ ОПТИМИЗАЦИЯ: Кэшируем форматированный текст курса
   String _formatRateText() {
-    final rate = _computeRate(_fromCurrency, _toCurrency);
-    if (rate == null) {
-      return '1 $_fromCurrency = -- $_toCurrency';
+    final key = '$_fromCurrency-$_toCurrency';
+    if (_cachedRateKey == key && _cachedRateText.isNotEmpty) {
+      return _cachedRateText;
     }
-
-    return '1 $_fromCurrency = ${formatAmount(rate)} $_toCurrency';
+    
+    final rate = _computeRate(_fromCurrency, _toCurrency);
+    String result;
+    if (rate == null) {
+      result = '1 $_fromCurrency = -- $_toCurrency';
+    } else {
+      result = '1 $_fromCurrency = ${formatAmount(rate)} $_toCurrency';
+    }
+    
+    _cachedRateText = result;
+    return result;
   }
 
   void _handleKeyPress(String label) {
