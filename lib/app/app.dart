@@ -1,4 +1,9 @@
-part of 'package:currency/main.dart';
+import 'package:currency/screens/currency_converter_screen.dart';
+import 'package:currency/utils/app_colors.dart';
+import 'package:currency/utils/app_strings.dart';
+import 'package:currency/utils/language_utils.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CurrencyApp extends StatefulWidget {
   const CurrencyApp({
@@ -33,9 +38,9 @@ class _CurrencyAppState extends State<CurrencyApp> {
           debugShowCheckedModeBanner: false,
           title: AppStrings.of(language, 'appTitle'),
           theme: ThemeData(
-            scaffoldBackgroundColor: _AppColors.bgMain,
+            scaffoldBackgroundColor: AppColors.bgMain,
             fontFamily: 'SF Pro Display',
-            colorScheme: const ColorScheme.dark(background: _AppColors.bgMain),
+            colorScheme: const ColorScheme.dark(background: AppColors.bgMain),
           ),
           home: CurrencyConverterScreen(
             languageNotifier: _languageNotifier,

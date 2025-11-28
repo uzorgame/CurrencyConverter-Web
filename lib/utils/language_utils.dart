@@ -1,4 +1,5 @@
-part of 'package:currency/main.dart';
+import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const List<String> kSupportedLanguages = ['EN', 'DE', 'FR', 'IT', 'ES', 'RU', 'UK'];
 const Map<String, String> _deviceLanguageToAppLanguage = {
@@ -13,7 +14,7 @@ const Map<String, String> _deviceLanguageToAppLanguage = {
 };
 const String _languagePreferenceKey = 'selectedLanguage';
 
-String _resolveInitialLanguage(SharedPreferences prefs) {
+String resolveInitialLanguage(SharedPreferences prefs) {
   final savedLanguage = prefs.getString(_languagePreferenceKey);
   if (savedLanguage != null && kSupportedLanguages.contains(savedLanguage)) {
     return savedLanguage;

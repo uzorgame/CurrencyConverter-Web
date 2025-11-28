@@ -1,4 +1,8 @@
-part of 'package:currency/main.dart';
+import 'package:currency/utils/app_colors.dart';
+import 'package:currency/utils/app_strings.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PrivacyPolicyPage extends StatelessWidget {
   const PrivacyPolicyPage({
@@ -25,7 +29,7 @@ class PrivacyPolicyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _AppColors.bgMain,
+      backgroundColor: AppColors.bgMain,
       body: SafeArea(
         child: Column(
           children: [
@@ -46,7 +50,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                         child: Text(
                           paragraph,
                           style: const TextStyle(
-                            color: _AppColors.textMain,
+                            color: AppColors.textMain,
                             fontSize: 17,
                             fontWeight: FontWeight.w600,
                           ),
@@ -61,7 +65,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                           TextSpan(
                             text: AppStrings.of(language, 'privacyPolicyUrl'),
                             style: const TextStyle(
-                              color: _AppColors.textDate,
+                              color: AppColors.textDate,
                               decoration: TextDecoration.underline,
                             ),
                             recognizer: TapGestureRecognizer()
@@ -70,7 +74,7 @@ class PrivacyPolicyPage extends StatelessWidget {
                         ],
                       ),
                       style: const TextStyle(
-                        color: _AppColors.textMain,
+                        color: AppColors.textMain,
                         fontSize: 17,
                         fontWeight: FontWeight.w600,
                       ),
@@ -110,7 +114,7 @@ class _SimpleHeader extends StatelessWidget {
                   padding: EdgeInsets.symmetric(horizontal: 14),
                   child: Icon(
                     Icons.arrow_back_ios_new_rounded,
-                    color: _AppColors.textMain,
+                    color: AppColors.textMain,
                     size: 22,
                   ),
                 ),
@@ -119,7 +123,7 @@ class _SimpleHeader extends StatelessWidget {
             Text(
               title,
               style: const TextStyle(
-                color: _AppColors.textMain,
+                color: AppColors.textMain,
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
               ),
