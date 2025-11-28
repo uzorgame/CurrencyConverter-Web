@@ -1488,6 +1488,28 @@ class HistoryChartBottomSheet extends StatefulWidget {
   State<HistoryChartBottomSheet> createState() => _HistoryChartBottomSheetState();
 }
 
+class _LabelOverlapTracker {
+  _LabelOverlapTracker(this.minSpacing);
+
+  final double minSpacing;
+  Rect? _lastBounds;
+
+  bool isOverlapping(Rect nextBounds) {
+    if (_lastBounds == null) {
+      _lastBounds = nextBounds;
+      return false;
+    }
+
+    final last = _lastBounds!.inflate(minSpacing / 2);
+    final current = nextBounds.inflate(minSpacing / 2);
+    final overlaps = last.overlaps(current);
+    if (!overlaps) {
+      _lastBounds = nextBounds;
+    }
+    return overlaps;
+  }
+}
+
 class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
   final Map<_HistoryInterval, List<HistoricalRate>> _cache = {};
   _HistoryInterval _interval = _HistoryInterval.days7;
@@ -1764,27 +1786,6 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
       if (axisExtent == 0 || min == max) return null;
       final fraction = ((value - min) / (max - min)).clamp(0.0, 1.0);
       return fraction * axisExtent;
-    }
-
-    class _LabelOverlapTracker {
-      _LabelOverlapTracker(this.minSpacing);
-
-      final double minSpacing;
-      Rect? _lastBounds;
-
-      bool isOverlapping(Rect nextBounds) {
-        if (_lastBounds == null) {
-          _lastBounds = nextBounds;
-          return false;
-        }
-        final last = _lastBounds!.inflate(minSpacing / 2);
-        final current = nextBounds.inflate(minSpacing / 2);
-        final overlaps = last.overlaps(current);
-        if (!overlaps) {
-          _lastBounds = nextBounds;
-        }
-        return overlaps;
-      }
     }
 
     final xLabelTracker = _LabelOverlapTracker(minimumLabelSpacing);
