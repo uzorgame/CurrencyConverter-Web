@@ -481,6 +481,12 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
         _toCurrency = selected;
         context.read<CurrencyProvider>().setToCurrency(selected);
       }
+      
+      // ⚡ ОПТИМИЗАЦИЯ: Инвалидируем кэш при смене валют
+      _cachedRate = null;
+      _cachedRateKey = '';
+      _cachedRateText = '';
+      
       _activeField = ActiveField.top;
       _recalculateLinkedValue();
     });
