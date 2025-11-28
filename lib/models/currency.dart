@@ -1,3 +1,7 @@
+import 'package:flutter/foundation.dart';
+
+// ⚡ ОПТИМИЗАЦИЯ: @immutable для const оптимизации
+@immutable
 class Currency {
   const Currency({
     required this.code,
