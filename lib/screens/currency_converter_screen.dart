@@ -221,7 +221,13 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     _recalculateLinkedValue();
   }
 
+  // ⚡ ОПТИМИЗАЦИЯ: Кэшируем вычисления курса
   double? _computeRate(String from, String to) {
+    final key = '$from-$to';
+    if (_cachedRateKey == key && _cachedRate != null) {
+      return _cachedRate;
+    }
+    
     final provider = context.read<CurrencyProvider>();
     if (provider.status != CurrencyStatus.loaded || provider.rates.isEmpty) {
       return null;
@@ -232,7 +238,10 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
 
     if (fromRate == null || toRate == null || fromRate == 0) return null;
 
-    return toRate / fromRate;
+    final result = toRate / fromRate;
+    _cachedRate = result;
+    _cachedRateKey = key;
+    return result;
   }
 
   String _formatRateText() {
