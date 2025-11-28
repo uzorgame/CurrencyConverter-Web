@@ -1687,9 +1687,9 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
     final minRate = _currentRates.map((r) => r.rate).reduce((a, b) => a < b ? a : b);
     final maxRate = _currentRates.map((r) => r.rate).reduce((a, b) => a > b ? a : b);
     final range = maxRate - minRate;
-    final padding = (range * 0.02).clamp(0.0001, double.infinity);
-    final minY = minRate - padding;
-    final maxY = maxRate + padding;
+    final padding = (range * 0.02).clamp(0.0001, double.infinity).toDouble();
+    final minY = (minRate - padding).toDouble();
+    final maxY = (maxRate + padding).toDouble();
 
     final spots = _currentRates
         .map((rate) => FlSpot(
@@ -1704,8 +1704,9 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
     final xTitleCount = math.min(5, math.max(2, spots.length));
     final singlePoint = xStart == xEnd;
     final effectiveXTitleCount = singlePoint ? 1 : xTitleCount;
-    final xInterval =
-        effectiveXTitleCount > 1 ? (xEnd - xStart) / (effectiveXTitleCount - 1) : 1;
+    final xInterval = effectiveXTitleCount > 1
+        ? (xEnd - xStart) / (effectiveXTitleCount - 1)
+        : 1.0;
     final xTitleValues = List.generate(
       effectiveXTitleCount,
       (index) => xStart + xInterval * index,
@@ -1713,7 +1714,7 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
     final xTolerance = xInterval * 0.01;
 
     final yTitleCount = 5;
-    final yInterval = yTitleCount > 1 ? (maxY - minY) / (yTitleCount - 1) : 1;
+    final yInterval = yTitleCount > 1 ? (maxY - minY) / (yTitleCount - 1) : 1.0;
     final yTitleValues =
         List.generate(yTitleCount, (index) => minY + yInterval * index);
     final yTolerance = yInterval * 0.01;
