@@ -384,6 +384,11 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       _topDisplay = _sanitizeNumberString(_bottomDisplay);
       _bottomDisplay = formatAmount(_parseDisplayValue(tempValue));
 
+      // ⚡ ОПТИМИЗАЦИЯ: Инвалидируем кэш при смене валют
+      _cachedRate = null;
+      _cachedRateKey = '';
+      _cachedRateText = '';
+
       _activeField = ActiveField.top;
       context.read<CurrencyProvider>().setFromCurrency(_fromCurrency);
       context.read<CurrencyProvider>().setToCurrency(_toCurrency);
