@@ -1701,27 +1701,94 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
 
     final xStart = spots.first.x;
     final xEnd = spots.last.x;
+    const minimumLabelSpacing = 4.0;
+
+    List<double> _expandedTitleValues(List<double> values) {
+      if (values.length < 2) return values;
+
+      final sorted = [...values]..sort();
+      final withMidpoints = <double>{...sorted};
+      for (var i = 0; i < sorted.length - 1; i++) {
+        withMidpoints.add((sorted[i] + sorted[i + 1]) / 2);
+      }
+      final result = withMidpoints.toList()..sort();
+      return result;
+    }
+
     final xTitleCount = math.min(5, math.max(2, spots.length));
     final singlePoint = xStart == xEnd;
     final effectiveXTitleCount = singlePoint ? 1 : xTitleCount;
     final xInterval = effectiveXTitleCount > 1
         ? (xEnd - xStart) / (effectiveXTitleCount - 1)
         : 1.0;
-    final xTitleValues = List.generate(
-      effectiveXTitleCount,
-      (index) => xStart + xInterval * index,
+    final xTitleValues = _expandedTitleValues(
+      List.generate(
+        effectiveXTitleCount,
+        (index) => xStart + xInterval * index,
+      ),
     );
     final xTolerance = xInterval * 0.01;
 
     final yTitleCount = 5;
     final yInterval = yTitleCount > 1 ? (maxY - minY) / (yTitleCount - 1) : 1.0;
-    final yTitleValues =
-        List.generate(yTitleCount, (index) => minY + yInterval * index);
+    final yTitleValues = _expandedTitleValues(
+      List.generate(yTitleCount, (index) => minY + yInterval * index),
+    );
     final yTolerance = yInterval * 0.01;
 
     bool shouldShowTitle(double value, List<double> targets, double tolerance) {
       return targets.any((target) => (value - target).abs() <= tolerance);
     }
+
+    Rect _buildLabelBounds({
+      required Size textSize,
+      required double position,
+      required bool isHorizontal,
+    }) {
+      final center = isHorizontal
+          ? Offset(position, textSize.height / 2)
+          : Offset(textSize.width / 2, position);
+      return Rect.fromCenter(
+        center: center,
+        width: textSize.width,
+        height: textSize.height,
+      );
+    }
+
+    double? _calculateAxisPosition({
+      required double value,
+      required double min,
+      required double max,
+      required double axisExtent,
+    }) {
+      if (axisExtent == 0 || min == max) return null;
+      final fraction = ((value - min) / (max - min)).clamp(0.0, 1.0);
+      return fraction * axisExtent;
+    }
+
+    class _LabelOverlapTracker {
+      _LabelOverlapTracker(this.minSpacing);
+
+      final double minSpacing;
+      Rect? _lastBounds;
+
+      bool isOverlapping(Rect nextBounds) {
+        if (_lastBounds == null) {
+          _lastBounds = nextBounds;
+          return false;
+        }
+        final last = _lastBounds!.inflate(minSpacing / 2);
+        final current = nextBounds.inflate(minSpacing / 2);
+        final overlaps = last.overlaps(current);
+        if (!overlaps) {
+          _lastBounds = nextBounds;
+        }
+        return overlaps;
+      }
+    }
+
+    final xLabelTracker = _LabelOverlapTracker(minimumLabelSpacing);
+    final yLabelTracker = _LabelOverlapTracker(minimumLabelSpacing);
 
     return SizedBox(
       height: 320,
@@ -1764,17 +1831,46 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
                   showTitles: true,
                   reservedSize: 56,
                   interval: yInterval,
-                  getTitlesWidget: (value, _) {
+                  getTitlesWidget: (value, meta) {
                     if (!shouldShowTitle(value, yTitleValues, yTolerance)) {
                       return const SizedBox.shrink();
                     }
+
+                    final label = value.toStringAsFixed(2);
+                    const textStyle = TextStyle(
+                      color: _AppColors.textRate,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    );
+                    final painter = TextPainter(
+                      text: TextSpan(text: label, style: textStyle),
+                      textDirection: TextDirection.ltr,
+                    )..layout();
+
+                    final position = _calculateAxisPosition(
+                      value: value,
+                      min: meta.min,
+                      max: meta.max,
+                      axisExtent: meta.parentAxisSize,
+                    );
+
+                    if (position == null) {
+                      return const SizedBox.shrink();
+                    }
+
+                    final bounds = _buildLabelBounds(
+                      textSize: painter.size,
+                      position: position,
+                      isHorizontal: false,
+                    );
+
+                    if (yLabelTracker.isOverlapping(bounds)) {
+                      return const SizedBox.shrink();
+                    }
+
                     return Text(
-                      value.toStringAsFixed(2),
-                      style: const TextStyle(
-                        color: _AppColors.textRate,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      label,
+                      style: textStyle,
                     );
                   },
                 ),
@@ -1789,16 +1885,44 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
                       return const SizedBox.shrink();
                     }
                     final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
+                    final label = _formatShortDate(date);
+                    const textStyle = TextStyle(
+                      color: _AppColors.textRate,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    );
+
+                    final painter = TextPainter(
+                      text: TextSpan(text: label, style: textStyle),
+                      textDirection: TextDirection.ltr,
+                    )..layout();
+
+                    final position = _calculateAxisPosition(
+                      value: value,
+                      min: meta.min,
+                      max: meta.max,
+                      axisExtent: meta.parentAxisSize,
+                    );
+
+                    if (position == null) {
+                      return const SizedBox.shrink();
+                    }
+
+                    final bounds = _buildLabelBounds(
+                      textSize: painter.size,
+                      position: position,
+                      isHorizontal: true,
+                    );
+
+                    if (xLabelTracker.isOverlapping(bounds)) {
+                      return const SizedBox.shrink();
+                    }
                     return SideTitleWidget(
                       axisSide: meta.axisSide,
                       space: 12,
                       child: Text(
-                        _formatShortDate(date),
-                        style: const TextStyle(
-                          color: _AppColors.textRate,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        label,
+                        style: textStyle,
                       ),
                     );
                   },
