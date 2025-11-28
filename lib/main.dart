@@ -1686,7 +1686,8 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
 
     final minRate = _currentRates.map((r) => r.rate).reduce((a, b) => a < b ? a : b);
     final maxRate = _currentRates.map((r) => r.rate).reduce((a, b) => a > b ? a : b);
-    final padding = ((maxRate - minRate) * 0.05).clamp(0.0001, double.infinity);
+    final range = maxRate - minRate;
+    final padding = (range * 0.02).clamp(0.0001, double.infinity);
     final minY = minRate - padding;
     final maxY = maxRate + padding;
 
@@ -1695,11 +1696,31 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
               rate.date.millisecondsSinceEpoch.toDouble(),
               rate.rate,
             ))
-        .toList();
+        .toList()
+      ..sort((a, b) => a.x.compareTo(b.x));
 
     final xStart = spots.first.x;
     final xEnd = spots.last.x;
-    final interval = ((xEnd - xStart) / 3).clamp(1, double.infinity);
+    final xTitleCount = math.min(5, math.max(2, spots.length));
+    final singlePoint = xStart == xEnd;
+    final effectiveXTitleCount = singlePoint ? 1 : xTitleCount;
+    final xInterval =
+        effectiveXTitleCount > 1 ? (xEnd - xStart) / (effectiveXTitleCount - 1) : 1;
+    final xTitleValues = List.generate(
+      effectiveXTitleCount,
+      (index) => xStart + xInterval * index,
+    );
+    final xTolerance = xInterval * 0.01;
+
+    final yTitleCount = 5;
+    final yInterval = yTitleCount > 1 ? (maxY - minY) / (yTitleCount - 1) : 1;
+    final yTitleValues =
+        List.generate(yTitleCount, (index) => minY + yInterval * index);
+    final yTolerance = yInterval * 0.01;
+
+    bool shouldShowTitle(double value, List<double> targets, double tolerance) {
+      return targets.any((target) => (value - target).abs() <= tolerance);
+    }
 
     return SizedBox(
       height: 320,
@@ -1709,6 +1730,8 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
           LineChartData(
             minY: minY,
             maxY: maxY,
+            minX: xStart,
+            maxX: xEnd,
             gridData: FlGridData(show: false),
             lineTouchData: LineTouchData(
               touchTooltipData: LineTouchTooltipData(
@@ -1738,10 +1761,14 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
-                  reservedSize: 44,
+                  reservedSize: 56,
+                  interval: yInterval,
                   getTitlesWidget: (value, _) {
+                    if (!shouldShowTitle(value, yTitleValues, yTolerance)) {
+                      return const SizedBox.shrink();
+                    }
                     return Text(
-                      value.toStringAsFixed(4),
+                      value.toStringAsFixed(2),
                       style: const TextStyle(
                         color: _AppColors.textRate,
                         fontSize: 12,
@@ -1754,12 +1781,16 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
-                  reservedSize: 36,
-                  interval: interval.toDouble(),
+                  reservedSize: 48,
+                  interval: xInterval,
                   getTitlesWidget: (value, meta) {
+                    if (!shouldShowTitle(value, xTitleValues, xTolerance)) {
+                      return const SizedBox.shrink();
+                    }
                     final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
                     return SideTitleWidget(
                       axisSide: meta.axisSide,
+                      space: 12,
                       child: Text(
                         _formatShortDate(date),
                         style: const TextStyle(
