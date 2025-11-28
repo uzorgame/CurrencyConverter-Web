@@ -89,18 +89,17 @@ class HistoricalRatesRepository {
   Future<void> _ensureInitialized() async {
     if (_isInitialized) return;
     
+    // 🔧 ИСПРАВЛЕНО: Простая логика - либо ждём либо запускаем
     if (_initCompleter != null) {
-      // 🔧 ИСПРАВЛЕНО: Используем try-catch для избежания deadlock
       try {
         await _initCompleter!.future;
       } catch (_) {
-        // Если инициализация провалилась, сбрасываем и пробуем снова
         _initCompleter = null;
+        _isInitialized = false;
       }
     }
     
-    if (!_isInitialized && _initCompleter == null) {
-      // 🔧 ИСПРАВЛЕНО: Даём второй шанс после ошибки
+    if (!_isInitialized) {
       await initializeAsync();
     }
   }
@@ -110,30 +109,16 @@ class HistoricalRatesRepository {
     required String target,
     required int days,
   }) async {
-    // 🔧 ИСПРАВЛЕНО: Убрали блокирующее ожидание инициализации
-    // Если БД ещё не готова, просто вернём пустой список
-    try {
-      if (_isInitialized || _initCompleter == null) {
-        await _ensureInitialized();
-      }
-      final cached = await database.loadLatest(base: base, target: target, days: days);
-      return cached.reversed.toList();
-    } catch (_) {
-      // Возвращаем пустой список если не удалось загрузить
-      return [];
-    }
+    // 🔧 ИСПРАВЛЕНО: Обязательно инициализируем БД перед запросом
+    await _ensureInitialized();
+    final cached = await database.loadLatest(base: base, target: target, days: days);
+    return cached.reversed.toList();
   }
 
   Future<void> ensurePairFreshness(String base, String target) async {
-    // 🔧 ИСПРАВЛЕНО: Не блокируем если инициализация в процессе
-    try {
-      if (_isInitialized || _initCompleter == null) {
-        await _ensureInitialized();
-      }
-      await _syncPair(base, target);
-    } catch (_) {
-      // Игнорируем ошибки синхронизации
-    }
+    // 🔧 ИСПРАВЛЕНО: Обязательно инициализируем БД перед синхронизацией
+    await _ensureInitialized();
+    await _syncPair(base, target);
   }
 
   List<(String, String)> _buildPairs(List<String> currencies) {
