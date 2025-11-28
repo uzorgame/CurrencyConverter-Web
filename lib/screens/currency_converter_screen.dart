@@ -106,8 +106,10 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                 ),
                 const SizedBox(height: 16),
                 Expanded(
-                  child: Keypad(
-                    onKeyPressed: _handleKeyPress,
+                  child: RepaintBoundary(
+                    child: Keypad(
+                      onKeyPressed: _handleKeyPress,
+                    ),
                   ),
                 ),
                 SafeArea(
