@@ -235,8 +235,6 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
         _currentRates.map((rate) => rate.rate).reduce(math.min).toDouble();
     final maxRate =
         _currentRates.map((rate) => rate.rate).reduce(math.max).toDouble();
-    final startDate = _currentRates.first.date;
-    final lastUpdatedDate = widget.lastUpdated;
     final spots = _currentRates.map((rate) {
       return FlSpot(
         rate.date.millisecondsSinceEpoch.toDouble(),
@@ -521,34 +519,6 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
                 style: const TextStyle(
                   color: _AppColors.textRate,
                   fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 12,
-            bottom: 16,
-            child: IgnorePointer(
-              child: Text(
-                _formatFullDate(startDate),
-                style: const TextStyle(
-                  color: _AppColors.textDate,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            right: 12,
-            bottom: 16,
-            child: IgnorePointer(
-              child: Text(
-                _formatFullDate(lastUpdatedDate),
-                style: const TextStyle(
-                  color: _AppColors.textDate,
-                  fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
               ),
