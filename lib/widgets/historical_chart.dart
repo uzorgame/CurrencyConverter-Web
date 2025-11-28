@@ -234,7 +234,7 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
     final spots = _currentRates.map((rate) {
       return FlSpot(
         rate.date.millisecondsSinceEpoch.toDouble(),
-        rate.value,
+        rate.rate,
       );
     }).toList();
 
@@ -255,7 +255,7 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
     maxY += yPadding;
 
     final yRange = maxY - minY;
-    final yInterval = yRange <= 0.1
+    final double yInterval = yRange <= 0.1
         ? 0.01
         : yRange <= 0.5
             ? 0.05
@@ -266,21 +266,21 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
                     : yRange <= 5
                         ? 0.5
                         : yRange <= 10
-                            ? 1
+                            ? 1.0
                             : yRange <= 20
-                                ? 2
+                                ? 2.0
                                 : yRange <= 50
-                                    ? 5
-                                    : 10;
+                                    ? 5.0
+                                    : 10.0;
 
     final xRange = maxX - minX;
-    final xInterval = xRange <= 5 * 24 * 60 * 60 * 1000
-        ? 24 * 60 * 60 * 1000
+    final double xInterval = xRange <= 5 * 24 * 60 * 60 * 1000
+        ? (24 * 60 * 60 * 1000).toDouble()
         : xRange <= 20 * 24 * 60 * 60 * 1000
-            ? 5 * 24 * 60 * 60 * 1000
+            ? (5 * 24 * 60 * 60 * 1000).toDouble()
             : xRange <= 60 * 24 * 60 * 60 * 1000
-                ? 10 * 24 * 60 * 60 * 1000
-                : 30 * 24 * 60 * 60 * 1000;
+                ? (10 * 24 * 60 * 60 * 1000).toDouble()
+                : (30 * 24 * 60 * 60 * 1000).toDouble();
 
     final yTitleValues = _calculateTitleValues(minY, maxY, yInterval);
     final xTitleValues = _calculateTitleValues(minX, maxX, xInterval);
@@ -491,6 +491,23 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
         ),
       ),
     );
+  }
+
+  List<double> _calculateTitleValues(
+    double min,
+    double max,
+    double interval,
+  ) {
+    final values = <double>[];
+    double current = (min / interval).floorToDouble() * interval;
+    if (current < min) {
+      current += interval;
+    }
+    while (current <= max) {
+      values.add(current);
+      current += interval;
+    }
+    return values;
   }
 
   String _formatSubtitle() {
