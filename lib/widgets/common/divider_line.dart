@@ -6,10 +6,11 @@ class DividerLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    // ⚡ ОПТИМИЗАЦИЯ: const Container для избежания пересоздания
+    return const SizedBox(
       width: double.infinity,
       height: 1,
-      color: AppColors.dividerLine,
+      child: ColoredBox(color: AppColors.dividerLine),
     );
   }
 }
