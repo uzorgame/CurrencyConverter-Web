@@ -8,6 +8,7 @@ class Keypad extends StatelessWidget {
 
   final void Function(String) onKeyPressed;
 
+  // ⚡ ОПТИМИЗАЦИЯ: const List для избежания пересоздания
   static const List<KeyDefinition> _keys = [
     KeyDefinition('C', AppColors.keyRow1Bg),
     KeyDefinition('←', AppColors.keyRow1Bg),
