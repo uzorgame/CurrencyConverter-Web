@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+
 enum ActiveField { top, bottom }
 
 enum HistoryInterval {
@@ -35,9 +38,11 @@ extension HistoryIntervalExtension on HistoryInterval {
   }
 }
 
+// ⚡ ОПТИМИЗАЦИЯ: @immutable для const оптимизации
+@immutable
 class KeyDefinition {
   const KeyDefinition(this.label, this.color);
 
   final String label;
-  final color;
+  final Color color;
 }
