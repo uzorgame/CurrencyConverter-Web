@@ -1,4 +1,4 @@
-part of 'main.dart';
+part of 'package:currency/main.dart';
 
 class _StatusTime extends StatelessWidget {
   const _StatusTime();

@@ -1,4 +1,4 @@
-part of 'main.dart';
+part of 'package:currency/main.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({

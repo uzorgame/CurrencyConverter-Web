@@ -1,4 +1,4 @@
-part of 'main.dart';
+part of 'package:currency/main.dart';
 
 const List<String> kSupportedLanguages = ['EN', 'DE', 'FR', 'IT', 'ES', 'RU', 'UK'];
 const Map<String, String> _deviceLanguageToAppLanguage = {

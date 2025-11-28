@@ -1,4 +1,4 @@
-part of 'main.dart';
+part of 'package:currency/main.dart';
 
 class _AppColors {
   static const bgMain = Color(0xFF323232);
