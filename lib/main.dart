@@ -39,7 +39,8 @@ Future<void> main() async {
     currencyRepository: repository,
   );
 
-  await historicalRepository.initialize();
+  // ⚡ ОПТИМИЗАЦИЯ: Убрали блокирующую инициализацию
+  // await historicalRepository.initialize(); // ❌ Блокировало запуск!
 
   final initialLanguage = resolveInitialLanguage(prefs);
 
@@ -57,4 +58,7 @@ Future<void> main() async {
       ),
     ),
   );
+
+  // ⚡ ОПТИМИЗАЦИЯ: Инициализируем в фоне ПОСЛЕ показа UI
+  historicalRepository.initializeAsync();
 }
