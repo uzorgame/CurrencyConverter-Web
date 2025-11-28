@@ -1,4 +1,4 @@
-part of 'main.dart';
+part of 'package:currency/main.dart';
 
 String _formatDateTime(DateTime dateTime) {
   final year = dateTime.year.toString().padLeft(4, '0');

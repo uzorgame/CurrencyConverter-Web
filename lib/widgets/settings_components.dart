@@ -1,4 +1,4 @@
-part of 'main.dart';
+part of 'package:currency/main.dart';
 
 const Map<String, String> _settingsLanguages = {
   'EN': 'English',
