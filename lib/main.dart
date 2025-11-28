@@ -8,6 +8,34 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+const List<String> kSupportedLanguages = ['EN', 'DE', 'FR', 'IT', 'ES', 'RU', 'UK'];
+const Map<String, String> _deviceLanguageToAppLanguage = {
+  'en': 'EN',
+  'de': 'DE',
+  'fr': 'FR',
+  'it': 'IT',
+  'es': 'ES',
+  'ru': 'RU',
+  'uk': 'UK',
+  'ua': 'UK',
+};
+const String _languagePreferenceKey = 'selectedLanguage';
+
+String _resolveInitialLanguage(SharedPreferences prefs) {
+  final savedLanguage = prefs.getString(_languagePreferenceKey);
+  if (savedLanguage != null && kSupportedLanguages.contains(savedLanguage)) {
+    return savedLanguage;
+  }
+
+  final deviceLanguage = WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+  final matchedLanguage = _deviceLanguageToAppLanguage[deviceLanguage.toLowerCase()];
+  if (matchedLanguage != null && kSupportedLanguages.contains(matchedLanguage)) {
+    return matchedLanguage;
+  }
+
+  return 'EN';
+}
+
 import 'models/historical_rate.dart';
 import 'providers/currency_provider.dart';
 import 'repositories/currency_repository.dart';
@@ -32,6 +60,8 @@ Future<void> main() async {
 
   await historicalRepository.initialize();
 
+  final initialLanguage = _resolveInitialLanguage(prefs);
+
   runApp(
     MultiProvider(
       providers: [
@@ -40,7 +70,10 @@ Future<void> main() async {
           create: (_) => CurrencyProvider(repository)..init(),
         ),
       ],
-      child: const CurrencyApp(),
+      child: CurrencyApp(
+        initialLanguage: initialLanguage,
+        prefs: prefs,
+      ),
     ),
   );
 }
@@ -188,152 +221,122 @@ Widget buildEurFlag() {
 }
 
 class AppStrings {
+  static const Set<String> _englishOnlyKeys = {
+    'about',
+    'aboutCompany',
+    'privacyPolicy',
+    'privacyIntro',
+    'privacyNoAds',
+    'privacyFirebase',
+    'privacyCurrencyApi',
+    'privacyNoSell',
+    'privacyFullDetails',
+    'privacyPolicyUrl',
+    'versionLabel',
+  };
+
+  static const Map<String, String> _englishOnlyValues = {
+    'about': 'About',
+    'privacyPolicy': 'Privacy Policy',
+    'aboutCompany': 'UzorGame Inc',
+    'versionLabel': 'Version $kAppVersion',
+    'privacyIntro':
+        'The app does not collect personal data. We do not ask for your name, email, phone number, contacts, or precise location.',
+    'privacyNoAds':
+        'We do not run ads, do not create accounts, and do not upload your data to our servers. All settings stay locally on your device.',
+    'privacyFirebase':
+        'The app uses Firebase Analytics to understand basic usage (e.g., crashes, screen views). This includes technical data such as device type, app version, and country (coarse). Firebase does not provide us with your identity or IP address.',
+    'privacyCurrencyApi':
+        'The app requests exchange rates from an external Currency API. These requests do not include personal information or identifiers.',
+    'privacyNoSell': 'We do not sell or share user data.',
+    'privacyFullDetails':
+        'For full details, please read our complete Privacy Policy at:',
+    'privacyPolicyUrl': 'https://uzorgame.github.io/privacy-policy-converter',
+  };
+
   static const Map<String, Map<String, String>> _values = {
     'EN': {
+      ..._englishOnlyValues,
       'appTitle': 'Currency Converter+',
       'settingsTitle': 'Settings',
       'language': 'Language',
-      'about': 'About',
-      'privacyPolicy': 'Privacy Policy',
-      'aboutCompany': 'UzorGame Inc',
-      'versionLabel': 'Version $kAppVersion',
-      'privacyIntro':
-          'The app does not collect personal data. We do not ask for your name, email, phone number, contacts, or precise location.',
-      'privacyNoAds':
-          'We do not run ads, do not create accounts, and do not upload your data to our servers. All settings stay locally on your device.',
-      'privacyFirebase':
-          'The app uses Firebase Analytics to understand basic usage (e.g., crashes, screen views). This includes technical data such as device type, app version, and country (coarse). Firebase does not provide us with your identity or IP address.',
-      'privacyCurrencyApi':
-          'The app requests exchange rates from an external Currency API. These requests do not include personal information or identifiers.',
-      'privacyNoSell': 'We do not sell or share user data.',
-      'privacyFullDetails':
-          'For full details, please read our complete Privacy Policy at:',
-      'privacyPolicyUrl': 'https://uzorgame.github.io/privacy-policy-converter',
+      'currenciesTitle': 'Currencies',
+      'favorites': 'Favorites',
+      'searchHint': 'Search',
+      'ok': 'OK',
+      'linkOpenError': 'Could not open the link',
     },
     'DE': {
+      ..._englishOnlyValues,
       'appTitle': 'Währungsrechner+',
       'settingsTitle': 'Einstellungen',
       'language': 'Sprache',
-      'about': 'Informationen',
-      'privacyPolicy': 'Datenschutzrichtlinie',
-      'aboutCompany': 'UzorGame Inc',
-      'versionLabel': 'Version $kAppVersion',
-      'privacyIntro':
-          'Die App sammelt keine personenbezogenen Daten. Wir fragen weder nach Ihrem Namen, Ihrer E-Mail, Telefonnummer, Kontakten noch nach Ihrem genauen Standort.',
-      'privacyNoAds':
-          'Wir schalten keine Werbung, erstellen keine Konten und laden Ihre Daten nicht auf unsere Server hoch. Alle Einstellungen bleiben lokal auf Ihrem Gerät.',
-      'privacyFirebase':
-          'Die App verwendet Firebase Analytics, um grundlegende Nutzung zu verstehen (z. B. Abstürze, Bildschirmaufrufe). Dazu gehören technische Daten wie Gerätetyp, App-Version und Land (grob). Firebase stellt uns weder Ihre Identität noch Ihre IP-Adresse zur Verfügung.',
-      'privacyCurrencyApi':
-          'Die App ruft Wechselkurse von einer externen Currency API ab. Diese Anfragen enthalten keine personenbezogenen Informationen oder Kennungen.',
-      'privacyNoSell': 'Wir verkaufen oder teilen keine Benutzerdaten.',
-      'privacyFullDetails': 'Die vollständige Richtlinie finden Sie hier:',
-      'privacyPolicyUrl': 'https://uzorgame.github.io/privacy-policy-converter',
+      'currenciesTitle': 'Währungen',
+      'favorites': 'Favoriten',
+      'searchHint': 'Suche',
+      'ok': 'OK',
+      'linkOpenError': 'Link konnte nicht geöffnet werden',
     },
     'FR': {
+      ..._englishOnlyValues,
       'appTitle': 'Convertisseur de devises+',
       'settingsTitle': 'Paramètres',
       'language': 'Langue',
-      'about': 'À propos',
-      'privacyPolicy': 'Politique de confidentialité',
-      'aboutCompany': 'UzorGame Inc',
-      'versionLabel': 'Version $kAppVersion',
-      'privacyIntro':
-          "L’application ne collecte pas de données personnelles. Nous ne demandons pas votre nom, votre e-mail, votre numéro de téléphone, vos contacts ou votre position précise.",
-      'privacyNoAds':
-          "Nous n’affichons pas de publicités, ne créons pas de comptes et ne téléchargeons pas vos données sur nos serveurs. Tous les réglages restent localement sur votre appareil.",
-      'privacyFirebase':
-          "L’application utilise Firebase Analytics pour comprendre l’utilisation de base (p. ex. crashs, vues d’écran). Cela inclut des données techniques telles que le type d’appareil, la version de l’app et le pays (approximatif). Firebase ne nous fournit ni votre identité ni votre adresse IP.",
-      'privacyCurrencyApi':
-          "L’application demande les taux de change à une API Currency externe. Ces requêtes ne contiennent pas d’informations personnelles ni d’identifiants.",
-      'privacyNoSell': "Nous ne vendons ni ne partageons les données des utilisateurs.",
-      'privacyFullDetails': 'Pour plus de détails, consultez la politique complète ici :',
-      'privacyPolicyUrl': 'https://uzorgame.github.io/privacy-policy-converter',
+      'currenciesTitle': 'Devises',
+      'favorites': 'Favoris',
+      'searchHint': 'Recherche',
+      'ok': 'OK',
+      'linkOpenError': 'Impossible d’ouvrir le lien',
     },
     'IT': {
+      ..._englishOnlyValues,
       'appTitle': 'Convertitore di valuta+',
       'settingsTitle': 'Impostazioni',
       'language': 'Lingua',
-      'about': 'Informazioni',
-      'privacyPolicy': 'Informativa sulla privacy',
-      'aboutCompany': 'UzorGame Inc',
-      'versionLabel': 'Versione $kAppVersion',
-      'privacyIntro':
-          "L’app non raccoglie dati personali. Non chiediamo il tuo nome, e-mail, numero di telefono, contatti o posizione precisa.",
-      'privacyNoAds':
-          "Non mostriamo pubblicità, non creiamo account e non carichiamo i tuoi dati sui nostri server. Tutte le impostazioni rimangono locali sul tuo dispositivo.",
-      'privacyFirebase':
-          "L’app utilizza Firebase Analytics per comprendere l’utilizzo di base (ad es. crash, visualizzazioni di schermate). Ciò include dati tecnici come tipo di dispositivo, versione dell’app e paese (approssimativo). Firebase non ci fornisce la tua identità o il tuo indirizzo IP.",
-      'privacyCurrencyApi':
-          "L’app richiede i tassi di cambio da un’API Currency esterna. Queste richieste non includono informazioni personali o identificatori.",
-      'privacyNoSell': 'Non vendiamo né condividiamo i dati degli utenti.',
-      'privacyFullDetails': 'Per i dettagli completi, leggi la politica completa qui:',
-      'privacyPolicyUrl': 'https://uzorgame.github.io/privacy-policy-converter',
+      'currenciesTitle': 'Valute',
+      'favorites': 'Preferiti',
+      'searchHint': 'Cerca',
+      'ok': 'OK',
+      'linkOpenError': 'Impossibile aprire il link',
     },
     'ES': {
+      ..._englishOnlyValues,
       'appTitle': 'Convertidor de divisas+',
       'settingsTitle': 'Configuración',
       'language': 'Idioma',
-      'about': 'Acerca de',
-      'privacyPolicy': 'Política de privacidad',
-      'aboutCompany': 'UzorGame Inc',
-      'versionLabel': 'Versión $kAppVersion',
-      'privacyIntro':
-          'La aplicación no recopila datos personales. No solicitamos tu nombre, correo electrónico, número de teléfono, contactos ni tu ubicación precisa.',
-      'privacyNoAds':
-          'No mostramos anuncios, no creamos cuentas y no subimos tus datos a nuestros servidores. Todas las configuraciones permanecen localmente en tu dispositivo.',
-      'privacyFirebase':
-          'La aplicación utiliza Firebase Analytics para comprender el uso básico (p. ej., fallos, vistas de pantalla). Esto incluye datos técnicos como tipo de dispositivo, versión de la aplicación y país (aproximado). Firebase no nos proporciona tu identidad ni tu dirección IP.',
-      'privacyCurrencyApi':
-          'La aplicación solicita tasas de cambio a una API de Currency externa. Estas solicitudes no incluyen información personal ni identificadores.',
-      'privacyNoSell': 'No vendemos ni compartimos datos de los usuarios.',
-      'privacyFullDetails': 'Para más detalles, consulta la política completa aquí:',
-      'privacyPolicyUrl': 'https://uzorgame.github.io/privacy-policy-converter',
+      'currenciesTitle': 'Monedas',
+      'favorites': 'Favoritos',
+      'searchHint': 'Buscar',
+      'ok': 'OK',
+      'linkOpenError': 'No se pudo abrir el enlace',
     },
     'RU': {
+      ..._englishOnlyValues,
       'appTitle': 'Конвертер валют+',
       'settingsTitle': 'Настройки',
       'language': 'Язык',
-      'about': 'О приложении',
-      'privacyPolicy': 'Политика конфиденциальности',
-      'aboutCompany': 'UzorGame Inc',
-      'versionLabel': 'Версия $kAppVersion',
-      'privacyIntro':
-          'Приложение не собирает персональные данные. Мы не спрашиваем ваше имя, email, номер телефона, контакты или точное местоположение.',
-      'privacyNoAds':
-          'Мы не показываем рекламу, не создаём аккаунты и не загружаем ваши данные на наши серверы. Все настройки остаются локально на вашем устройстве.',
-      'privacyFirebase':
-          'Приложение использует Firebase Analytics, чтобы понимать базовое использование (например, сбои, просмотры экранов). Это включает технические данные, такие как тип устройства, версия приложения и страна (примерно). Firebase не предоставляет нам вашу личность или IP-адрес.',
-      'privacyCurrencyApi':
-          'Приложение запрашивает курсы валют у внешнего Currency API. Эти запросы не содержат персональной информации или идентификаторов.',
-      'privacyNoSell': 'Мы не продаём и не передаём данные пользователей.',
-      'privacyFullDetails': 'Полный текст политики доступен по ссылке:',
-      'privacyPolicyUrl': 'https://uzorgame.github.io/privacy-policy-converter',
+      'currenciesTitle': 'Валюты',
+      'favorites': 'Избранное',
+      'searchHint': 'Поиск',
+      'ok': 'ОК',
+      'linkOpenError': 'Не удалось открыть ссылку',
     },
     'UK': {
+      ..._englishOnlyValues,
       'appTitle': 'Конвертер валют',
       'settingsTitle': 'Налаштування',
       'language': 'Мова',
-      'about': 'Про додаток',
-      'privacyPolicy': 'Політика конфіденційності',
-      'aboutCompany': 'UzorGame Inc',
-      'versionLabel': 'Версія $kAppVersion',
-      'privacyIntro':
-          'Додаток не збирає персональні дані. Ми не запитуємо ваше ім’я, email, номер телефону, контакти чи точне місцезнаходження.',
-      'privacyNoAds':
-          'Ми не показуємо рекламу, не створюємо облікові записи і не завантажуємо ваші дані на наші сервери. Усі налаштування зберігаються локально на вашому пристрої.',
-      'privacyFirebase':
-          'Додаток використовує Firebase Analytics, щоб розуміти базове використання (наприклад, збої, перегляди екранів). Це включає технічні дані, такі як тип пристрою, версія додатка та країна (приблизно). Firebase не надає нам вашу особу чи IP-адресу.',
-      'privacyCurrencyApi':
-          'Додаток запитує курси валют у зовнішнього Currency API. Ці запити не містять персональної інформації чи ідентифікаторів.',
-      'privacyNoSell': 'Ми не продаємо та не передаємо дані користувачів.',
-      'privacyFullDetails': 'Повну версію ви можете прочитати тут:',
-      'privacyPolicyUrl': 'https://uzorgame.github.io/privacy-policy-converter',
+      'currenciesTitle': 'Валюти',
+      'favorites': 'Вибрані',
+      'searchHint': 'Пошук',
+      'ok': 'ОК',
+      'linkOpenError': 'Не вдалося відкрити посилання',
     },
   };
 
   static String of(String language, String key) {
-    return _values[language]?[key] ?? _values['EN']?[key] ?? key;
+    final targetLanguage = _englishOnlyKeys.contains(key) ? 'EN' : language;
+    return _values[targetLanguage]?[key] ?? _values['EN']?[key] ?? key;
   }
 
   static List<String> privacyParagraphs(String language) => [
@@ -345,11 +348,42 @@ class AppStrings {
       ];
 }
 
-class CurrencyApp extends StatelessWidget {
-  const CurrencyApp({super.key});
+class PersistedLanguageNotifier extends ValueNotifier<String> {
+  PersistedLanguageNotifier(super.value, this.prefs);
 
-  static final ValueNotifier<String> _languageNotifier =
-      ValueNotifier(AppStrings._values.keys.first);
+  final SharedPreferences prefs;
+
+  @override
+  set value(String newValue) {
+    if (super.value == newValue) return;
+    super.value = newValue;
+    prefs.setString(_languagePreferenceKey, newValue);
+  }
+}
+
+class CurrencyApp extends StatefulWidget {
+  const CurrencyApp({
+    super.key,
+    required this.initialLanguage,
+    required this.prefs,
+  });
+
+  final String initialLanguage;
+  final SharedPreferences prefs;
+
+  @override
+  State<CurrencyApp> createState() => _CurrencyAppState();
+}
+
+class _CurrencyAppState extends State<CurrencyApp> {
+  late final PersistedLanguageNotifier _languageNotifier =
+      PersistedLanguageNotifier(widget.initialLanguage, widget.prefs);
+
+  @override
+  void dispose() {
+    _languageNotifier.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -741,6 +775,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   }
 
   Future<void> _openCurrencyPicker(ActiveField field) async {
+    final language = widget.languageNotifier.value;
     final currencies = _availableCurrencies(context.read<CurrencyProvider>());
     final selected = await Navigator.of(context).push<String>(
       PageRouteBuilder(
@@ -748,6 +783,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
         reverseTransitionDuration: const Duration(milliseconds: 250),
         pageBuilder: (_, __, ___) => CurrencyPickerPage(
           currencies: currencies,
+          language: language,
           initialCode:
               field == ActiveField.top ? _fromCurrency : _toCurrency,
         ),
@@ -931,11 +967,13 @@ class CurrencyPickerPage extends StatefulWidget {
   const CurrencyPickerPage({
     required this.initialCode,
     required this.currencies,
+    required this.language,
     super.key,
   });
 
   final String initialCode;
   final List<Currency> currencies;
+  final String language;
 
   @override
   State<CurrencyPickerPage> createState() => _CurrencyPickerPageState();
@@ -962,6 +1000,7 @@ class _CurrencyPickerPageState extends State<CurrencyPickerPage> {
   @override
   Widget build(BuildContext context) {
     final currencyProvider = context.watch<CurrencyProvider>();
+    final language = widget.language;
     final favoriteCodes = currencyProvider.favoriteCurrencies.toSet();
 
     final favoriteCurrencies = _filteredCurrencies
@@ -973,7 +1012,7 @@ class _CurrencyPickerPageState extends State<CurrencyPickerPage> {
 
     final tiles = <Widget>[
       if (favoriteCurrencies.isNotEmpty) ...[
-        const _FavoritesHeader(),
+        _FavoritesHeader(language: language),
         const SizedBox(height: 10),
         ..._buildTiles(favoriteCurrencies, currencyProvider),
         if (otherCurrencies.isNotEmpty) const SizedBox(height: 16),
@@ -986,11 +1025,17 @@ class _CurrencyPickerPageState extends State<CurrencyPickerPage> {
       body: SafeArea(
         child: Column(
           children: [
-            _PickerHeader(onBack: Navigator.of(context).pop),
+            _PickerHeader(
+              language: language,
+              onBack: Navigator.of(context).pop,
+            ),
             const SizedBox(height: 18),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 11),
-              child: _SearchField(controller: _searchController),
+              child: _SearchField(
+                controller: _searchController,
+                language: language,
+              ),
             ),
             const SizedBox(height: 12),
             Expanded(
@@ -1042,9 +1087,13 @@ class _CurrencyPickerPageState extends State<CurrencyPickerPage> {
 }
 
 class _PickerHeader extends StatelessWidget {
-  const _PickerHeader({required this.onBack});
+  const _PickerHeader({
+    required this.onBack,
+    required this.language,
+  });
 
   final VoidCallback onBack;
+  final String language;
 
   @override
   Widget build(BuildContext context) {
@@ -1070,9 +1119,9 @@ class _PickerHeader extends StatelessWidget {
                 ),
               ),
             ),
-            const Text(
-              'Валюти',
-              style: TextStyle(
+            Text(
+              AppStrings.of(language, 'currenciesTitle'),
+              style: const TextStyle(
                 color: _AppColors.textMain,
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -1086,9 +1135,13 @@ class _PickerHeader extends StatelessWidget {
 }
 
 class _SearchField extends StatelessWidget {
-  const _SearchField({required this.controller});
+  const _SearchField({
+    required this.controller,
+    required this.language,
+  });
 
   final TextEditingController controller;
+  final String language;
 
   @override
   Widget build(BuildContext context) {
@@ -1106,11 +1159,11 @@ class _SearchField extends StatelessWidget {
           fontWeight: FontWeight.w500,
         ),
         cursorColor: _AppColors.textMain,
-        decoration: const InputDecoration(
-          contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: InputDecoration(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           border: InputBorder.none,
-          hintText: 'Пошук',
-          hintStyle: TextStyle(
+          hintText: AppStrings.of(language, 'searchHint'),
+          hintStyle: const TextStyle(
             color: Color(0xFF9A9A9A),
             fontSize: 16,
             fontWeight: FontWeight.w500,
@@ -1205,17 +1258,19 @@ class _CurrencyTileState extends State<_CurrencyTile> {
 }
 
 class _FavoritesHeader extends StatelessWidget {
-  const _FavoritesHeader();
+  const _FavoritesHeader({required this.language});
+
+  final String language;
 
   @override
   Widget build(BuildContext context) {
-    return const Align(
+    return Align(
       alignment: Alignment.centerLeft,
       child: Padding(
-        padding: EdgeInsets.only(left: 8),
+        padding: const EdgeInsets.only(left: 8),
         child: Text(
-          'Вибрані',
-          style: TextStyle(
+          AppStrings.of(language, 'favorites'),
+          style: const TextStyle(
             color: _AppColors.textMain,
             fontSize: 17,
             fontWeight: FontWeight.w700,
@@ -2149,9 +2204,9 @@ Future<void> showAboutDialogForLanguage(
         actions: [
           TextButton(
             onPressed: Navigator.of(context).pop,
-            child: const Text(
-              'OK',
-              style: TextStyle(
+            child: Text(
+              AppStrings.of(language, 'ok'),
+              style: const TextStyle(
                 color: _AppColors.textMain,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
@@ -2498,7 +2553,9 @@ class PrivacyPolicyPage extends StatelessWidget {
     if (!await launchUrl(privacyPolicyUri, mode: LaunchMode.externalApplication)) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not open the link')),
+          SnackBar(
+            content: Text(AppStrings.of(language, 'linkOpenError')),
+          ),
         );
       }
     }
