@@ -8,6 +8,14 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'models/historical_rate.dart';
+import 'providers/currency_provider.dart';
+import 'repositories/currency_repository.dart';
+import 'repositories/historical_rates_repository.dart';
+import 'services/currency_api.dart';
+import 'services/historical_database.dart';
+import 'utils/amount_formatter.dart';
+
 const List<String> kSupportedLanguages = ['EN', 'DE', 'FR', 'IT', 'ES', 'RU', 'UK'];
 const Map<String, String> _deviceLanguageToAppLanguage = {
   'en': 'EN',
@@ -35,14 +43,6 @@ String _resolveInitialLanguage(SharedPreferences prefs) {
 
   return 'EN';
 }
-
-import 'models/historical_rate.dart';
-import 'providers/currency_provider.dart';
-import 'repositories/currency_repository.dart';
-import 'repositories/historical_rates_repository.dart';
-import 'services/currency_api.dart';
-import 'services/historical_database.dart';
-import 'utils/amount_formatter.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
