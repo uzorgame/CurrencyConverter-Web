@@ -1,4 +1,18 @@
-part of 'package:currency/main.dart';
+import 'package:currency/models/historical_rate.dart';
+import 'package:currency/providers/currency_provider.dart';
+import 'package:currency/repositories/historical_rates_repository.dart';
+import 'package:currency/screens/currency_picker_page.dart';
+import 'package:currency/screens/settings_page.dart';
+import 'package:currency/utils/active_field.dart';
+import 'package:currency/utils/amount_formatter.dart';
+import 'package:currency/utils/app_colors.dart';
+import 'package:currency/utils/app_strings.dart';
+import 'package:currency/utils/currency_utils.dart';
+import 'package:currency/utils/date_utils.dart';
+import 'package:currency/utils/key_definition.dart';
+import 'package:currency/widgets/converter_widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class CurrencyConverterScreen extends StatefulWidget {
   const CurrencyConverterScreen({
@@ -45,30 +59,30 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
           children: [
             Column(
               children: [
-                const _StatusTime(),
+                const StatusTime(),
                 const SizedBox(height: 12),
-                _CurrencyRow(
+                CurrencyRow(
                   currency: fromCurrency,
                   valueText: _topDisplay,
                   onTap: () => _openCurrencyPicker(ActiveField.top),
                 ),
                 const SizedBox(height: 10),
-                const _DividerLine(),
+                const DividerLine(),
                 const SizedBox(height: 10),
-                _CurrencyRow(
+                CurrencyRow(
                   currency: toCurrency,
                   valueText: _bottomDisplay,
                   onTap: () => _openCurrencyPicker(ActiveField.bottom),
                 ),
                 const SizedBox(height: 16),
                 Expanded(
-                  child: _Keypad(
+                  child: Keypad(
                     onKeyPressed: _handleKeyPress,
                   ),
                 ),
                 SafeArea(
                   bottom: true,
-                  child: _RatePanel(
+                  child: RatePanel(
                     dateTimeText: dateTimeText,
                     rateText: rateText,
                     onTap: _openHistorySheet,
@@ -88,7 +102,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                     padding: EdgeInsets.symmetric(horizontal: 14),
                     child: Icon(
                       Icons.settings,
-                      color: _AppColors.textMain,
+                      color: AppColors.textMain,
                       size: 24,
                     ),
                   ),
@@ -554,7 +568,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   String _formatLastUpdated(DateTime dateTime) {
     if (dateTime.millisecondsSinceEpoch == 0) return '--';
 
-    return _formatDateTime(dateTime);
+    return formatDateTime(dateTime);
   }
 }
 
@@ -616,7 +630,7 @@ class _CurrencyPickerPageState extends State<CurrencyPickerPage> {
     ];
 
     return Scaffold(
-      backgroundColor: _AppColors.bgMain,
+      backgroundColor: AppColors.bgMain,
       body: SafeArea(
         child: Column(
           children: [
@@ -708,7 +722,7 @@ class _PickerHeader extends StatelessWidget {
                   padding: EdgeInsets.symmetric(horizontal: 14),
                   child: Icon(
                     Icons.arrow_back_ios_new_rounded,
-                    color: _AppColors.textMain,
+                    color: AppColors.textMain,
                     size: 22,
                   ),
                 ),
@@ -717,7 +731,7 @@ class _PickerHeader extends StatelessWidget {
             Text(
               AppStrings.of(language, 'currenciesTitle'),
               style: const TextStyle(
-                color: _AppColors.textMain,
+                color: AppColors.textMain,
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
               ),
@@ -749,11 +763,11 @@ class _SearchField extends StatelessWidget {
       child: TextField(
         controller: controller,
         style: const TextStyle(
-          color: _AppColors.textMain,
+          color: AppColors.textMain,
           fontSize: 16,
           fontWeight: FontWeight.w500,
         ),
-        cursorColor: _AppColors.textMain,
+        cursorColor: AppColors.textMain,
         decoration: InputDecoration(
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           border: InputBorder.none,
@@ -814,7 +828,7 @@ class _CurrencyTileState extends State<_CurrencyTile> {
                 child: Text(
                   widget.currency.name,
                   style: const TextStyle(
-                    color: _AppColors.textMain,
+                    color: AppColors.textMain,
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
@@ -866,7 +880,7 @@ class _FavoritesHeader extends StatelessWidget {
         child: Text(
           AppStrings.of(language, 'favorites'),
           style: const TextStyle(
-            color: _AppColors.textMain,
+            color: AppColors.textMain,
             fontSize: 17,
             fontWeight: FontWeight.w700,
           ),

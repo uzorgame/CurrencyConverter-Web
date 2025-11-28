@@ -1,4 +1,9 @@
-part of 'package:currency/main.dart';
+import 'package:currency/providers/currency_provider.dart';
+import 'package:currency/utils/app_colors.dart';
+import 'package:currency/utils/app_strings.dart';
+import 'package:currency/utils/currency_utils.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class CurrencyPickerPage extends StatefulWidget {
   const CurrencyPickerPage({
@@ -58,7 +63,7 @@ class _CurrencyPickerPageState extends State<CurrencyPickerPage> {
     ];
 
     return Scaffold(
-      backgroundColor: _AppColors.bgMain,
+      backgroundColor: AppColors.bgMain,
       body: SafeArea(
         child: Column(
           children: [
@@ -150,7 +155,7 @@ class _PickerHeader extends StatelessWidget {
                   padding: EdgeInsets.symmetric(horizontal: 14),
                   child: Icon(
                     Icons.arrow_back_ios_new_rounded,
-                    color: _AppColors.textMain,
+                    color: AppColors.textMain,
                     size: 22,
                   ),
                 ),
@@ -159,7 +164,7 @@ class _PickerHeader extends StatelessWidget {
             Text(
               AppStrings.of(language, 'currenciesTitle'),
               style: const TextStyle(
-                color: _AppColors.textMain,
+                color: AppColors.textMain,
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
               ),
@@ -191,11 +196,11 @@ class _SearchField extends StatelessWidget {
       child: TextField(
         controller: controller,
         style: const TextStyle(
-          color: _AppColors.textMain,
+          color: AppColors.textMain,
           fontSize: 16,
           fontWeight: FontWeight.w500,
         ),
-        cursorColor: _AppColors.textMain,
+        cursorColor: AppColors.textMain,
         decoration: InputDecoration(
           contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           border: InputBorder.none,
@@ -256,7 +261,7 @@ class _CurrencyTileState extends State<_CurrencyTile> {
                 child: Text(
                   widget.currency.name,
                   style: const TextStyle(
-                    color: _AppColors.textMain,
+                    color: AppColors.textMain,
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                   ),
@@ -308,7 +313,7 @@ class _FavoritesHeader extends StatelessWidget {
         child: Text(
           AppStrings.of(language, 'favorites'),
           style: const TextStyle(
-            color: _AppColors.textMain,
+            color: AppColors.textMain,
             fontSize: 17,
             fontWeight: FontWeight.w700,
           ),

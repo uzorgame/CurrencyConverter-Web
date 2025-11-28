@@ -1,4 +1,3 @@
-part of 'package:currency/main.dart';
 
 const String kAppVersion = '1.0.8+8';
 

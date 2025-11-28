@@ -1,35 +1,28 @@
 import 'dart:math' as math;
 
-import 'package:circle_flags/circle_flags.dart';
+import 'package:currency/app/app.dart';
+import 'package:currency/models/historical_rate.dart';
+import 'package:currency/providers/currency_provider.dart';
+import 'package:currency/repositories/currency_repository.dart';
+import 'package:currency/repositories/historical_rates_repository.dart';
+import 'package:currency/services/currency_api.dart';
+import 'package:currency/services/historical_database.dart';
+import 'package:currency/utils/active_field.dart';
+import 'package:currency/utils/amount_formatter.dart';
+import 'package:currency/utils/app_colors.dart';
+import 'package:currency/utils/app_strings.dart';
+import 'package:currency/utils/currency_utils.dart';
+import 'package:currency/utils/date_utils.dart';
+import 'package:currency/utils/key_definition.dart';
+import 'package:currency/utils/language_utils.dart';
+import 'package:currency/widgets/converter_widgets.dart';
+import 'package:currency/widgets/settings_components.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import 'models/historical_rate.dart';
-import 'providers/currency_provider.dart';
-import 'repositories/currency_repository.dart';
-import 'repositories/historical_rates_repository.dart';
-import 'services/currency_api.dart';
-import 'services/historical_database.dart';
-import 'utils/amount_formatter.dart';
-
-part 'app/app.dart';
-part 'screens/currency_converter_screen.dart';
-part 'screens/currency_picker_page.dart';
-part 'screens/privacy_policy_page.dart';
-part 'screens/settings_page.dart';
-part 'utils/app_colors.dart';
-part 'utils/app_strings.dart';
-part 'utils/active_field.dart';
-part 'utils/currency_utils.dart';
-part 'utils/key_definition.dart';
-part 'utils/language_utils.dart';
-part 'utils/date_utils.dart';
-part 'widgets/converter_widgets.dart';
-part 'widgets/settings_components.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,7 +40,7 @@ Future<void> main() async {
 
   await historicalRepository.initialize();
 
-  final initialLanguage = _resolveInitialLanguage(prefs);
+  final initialLanguage = resolveInitialLanguage(prefs);
 
   runApp(
     MultiProvider(
@@ -156,7 +149,7 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
       heightFactor: 0.6,
       child: Container(
         decoration: const BoxDecoration(
-          color: _AppColors.bgMain,
+          color: AppColors.bgMain,
           borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
         ),
         padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
@@ -189,7 +182,7 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
               Text(
                 '${widget.baseCurrency} → ${widget.targetCurrency}',
                 style: const TextStyle(
-                  color: _AppColors.textMain,
+                  color: AppColors.textMain,
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
                 ),
@@ -198,7 +191,7 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
               Text(
                 subtitle,
                 style: const TextStyle(
-                  color: _AppColors.textRate,
+                  color: AppColors.textRate,
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
                 ),
@@ -213,7 +206,7 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
             padding: EdgeInsets.all(8.0),
             child: Icon(
               Icons.close,
-              color: _AppColors.textMain,
+              color: AppColors.textMain,
               size: 24,
             ),
           ),
@@ -238,14 +231,14 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
                 duration: const Duration(milliseconds: 150),
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 decoration: BoxDecoration(
-                  color: isActive ? _AppColors.keyOpBg : const Color(0xFF3E3E3E),
+                  color: isActive ? AppColors.keyOpBg : const Color(0xFF3E3E3E),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
                   child: Text(
                     interval.label,
                     style: const TextStyle(
-                      color: _AppColors.textMain,
+                      color: AppColors.textMain,
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                     ),
@@ -264,7 +257,7 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
       return const SizedBox(
         height: 280,
         child: Center(
-          child: CircularProgressIndicator(color: _AppColors.textMain),
+          child: CircularProgressIndicator(color: AppColors.textMain),
         ),
       );
     }
@@ -283,7 +276,7 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
             Text(
               AppStrings.of(widget.language, 'chartNoDataTitle'),
               style: const TextStyle(
-                color: _AppColors.textMain,
+                color: AppColors.textMain,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -293,7 +286,7 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
             Text(
               AppStrings.of(widget.language, 'chartNoDataSubtitle'),
               style: const TextStyle(
-                color: _AppColors.textRate,
+                color: AppColors.textRate,
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
@@ -409,7 +402,7 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
                     return LineTooltipItem(
                       '$formattedDate — $value',
                       const TextStyle(
-                        color: _AppColors.textMain,
+                        color: AppColors.textMain,
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                       ),
@@ -433,7 +426,7 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
 
                     final label = value.toStringAsFixed(2);
                     const textStyle = TextStyle(
-                      color: _AppColors.textRate,
+                      color: AppColors.textRate,
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     );
@@ -482,7 +475,7 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
                     final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
                     final label = _formatShortDate(date);
                     const textStyle = TextStyle(
-                      color: _AppColors.textRate,
+                      color: AppColors.textRate,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     );
@@ -530,13 +523,13 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
                 isCurved: true,
                 barWidth: 2,
                 dotData: const FlDotData(show: false),
-                color: _AppColors.keyOpBg,
+                color: AppColors.keyOpBg,
                 belowBarData: BarAreaData(
                   show: true,
                   gradient: LinearGradient(
                     colors: [
-                      _AppColors.keyOpBg.withOpacity(0.25),
-                      _AppColors.keyOpBg.withOpacity(0.05),
+                      AppColors.keyOpBg.withOpacity(0.25),
+                      AppColors.keyOpBg.withOpacity(0.05),
                     ],
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,

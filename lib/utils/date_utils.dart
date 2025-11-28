@@ -1,10 +1,9 @@
-part of 'package:currency/main.dart';
 
-String _formatDateTime(DateTime dateTime) {
+String formatDateTime(DateTime dateTime) {
   final year = dateTime.year.toString().padLeft(4, '0');
-  final month = _twoDigits(dateTime.month);
-  final day = _twoDigits(dateTime.day);
+  final month = twoDigits(dateTime.month);
+  final day = twoDigits(dateTime.day);
   return '$year-$month-$day';
 }
 
-String _twoDigits(int value) => value.toString().padLeft(2, '0');
+String twoDigits(int value) => value.toString().padLeft(2, '0');

@@ -1,7 +1,7 @@
-part of 'package:currency/main.dart';
+import 'package:flutter/material.dart';
 
-class _KeyDefinition {
-  const _KeyDefinition(this.label, this.color);
+class KeyDefinition {
+  const KeyDefinition(this.label, this.color);
 
   final String label;
   final Color color;

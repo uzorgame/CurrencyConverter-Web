@@ -1,6 +1,6 @@
-part of 'package:currency/main.dart';
+import 'package:flutter/material.dart';
 
-class _AppColors {
+class AppColors {
   static const bgMain = Color(0xFF323232);
   static const keyRow1Bg = Color(0xFF505050);
   static const keyNumBg = Color(0xFF646464);

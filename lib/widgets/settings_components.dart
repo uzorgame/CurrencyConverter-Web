@@ -1,4 +1,6 @@
-part of 'package:currency/main.dart';
+import 'package:currency/utils/app_colors.dart';
+import 'package:currency/utils/app_strings.dart';
+import 'package:flutter/material.dart';
 
 const Map<String, String> _settingsLanguages = {
   'EN': 'English',
@@ -16,7 +18,7 @@ Future<String?> showLanguageSelectorSheet(
 ) {
   return showModalBottomSheet<String>(
     context: context,
-    backgroundColor: _AppColors.bgMain,
+    backgroundColor: AppColors.bgMain,
     builder: (_) {
       return SafeArea(
         child: ListView.separated(
@@ -31,7 +33,7 @@ Future<String?> showLanguageSelectorSheet(
                 height: 56,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: isSelected ? _AppColors.keyRow1Bg : Colors.transparent,
+                  color: isSelected ? AppColors.keyRow1Bg : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -39,7 +41,7 @@ Future<String?> showLanguageSelectorSheet(
                     Text(
                       entry.value,
                       style: const TextStyle(
-                        color: _AppColors.textMain,
+                        color: AppColors.textMain,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -48,7 +50,7 @@ Future<String?> showLanguageSelectorSheet(
                     if (isSelected)
                       const Icon(
                         Icons.check,
-                        color: _AppColors.textMain,
+                        color: AppColors.textMain,
                       ),
                   ],
                 ),
@@ -71,13 +73,13 @@ Future<void> showAboutDialogForLanguage(
     context: context,
     builder: (_) {
       return AlertDialog(
-        backgroundColor: _AppColors.bgMain,
+        backgroundColor: AppColors.bgMain,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Center(
           child: Text(
             AppStrings.of(language, 'about'),
             style: const TextStyle(
-              color: _AppColors.textMain,
+              color: AppColors.textMain,
               fontSize: 20,
               fontWeight: FontWeight.w700,
             ),
@@ -90,7 +92,7 @@ Future<void> showAboutDialogForLanguage(
               AppStrings.of(language, 'aboutCompany'),
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: _AppColors.textMain,
+                color: AppColors.textMain,
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
               ),
@@ -100,7 +102,7 @@ Future<void> showAboutDialogForLanguage(
               AppStrings.of(language, 'versionLabel'),
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: _AppColors.textRate,
+                color: AppColors.textRate,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
@@ -113,7 +115,7 @@ Future<void> showAboutDialogForLanguage(
             onPressed: Navigator.of(context).pop,
             child: Text(
               AppStrings.of(language, 'ok'),
-              style: const TextStyle(color: _AppColors.keyOpBg),
+              style: const TextStyle(color: AppColors.keyOpBg),
             ),
           ),
         ],
@@ -139,7 +141,7 @@ class _SettingsBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: _AppColors.bgMain,
+        color: AppColors.bgMain,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SafeArea(
@@ -200,7 +202,7 @@ class _SettingsButton extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: _AppColors.keyRow1Bg,
+          backgroundColor: AppColors.keyRow1Bg,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           minimumSize: const Size(double.infinity, 54),
           elevation: 0,
@@ -208,13 +210,13 @@ class _SettingsButton extends StatelessWidget {
         onPressed: onTap,
         child: Row(
           children: [
-            Icon(icon, color: _AppColors.textMain, size: 24),
+            Icon(icon, color: AppColors.textMain, size: 24),
             const SizedBox(width: 14),
             Expanded(
               child: Text(
                 label,
                 style: const TextStyle(
-                  color: _AppColors.textMain,
+                  color: AppColors.textMain,
                   fontSize: 17,
                   fontWeight: FontWeight.w700,
                 ),
@@ -222,7 +224,7 @@ class _SettingsButton extends StatelessWidget {
             ),
             const Icon(
               Icons.arrow_forward_ios_rounded,
-              color: _AppColors.textMain,
+              color: AppColors.textMain,
               size: 18,
             ),
           ],

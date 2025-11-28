@@ -1,7 +1,10 @@
-part of 'package:currency/main.dart';
+import 'package:currency/utils/app_colors.dart';
+import 'package:currency/utils/currency_utils.dart';
+import 'package:currency/utils/key_definition.dart';
+import 'package:flutter/material.dart';
 
-class _StatusTime extends StatelessWidget {
-  const _StatusTime();
+class StatusTime extends StatelessWidget {
+  const StatusTime();
 
   @override
   Widget build(BuildContext context) {
@@ -9,8 +12,8 @@ class _StatusTime extends StatelessWidget {
   }
 }
 
-class _CurrencyRow extends StatelessWidget {
-  const _CurrencyRow({
+class CurrencyRow extends StatelessWidget {
+  const CurrencyRow({
     required this.currency,
     required this.valueText,
     required this.onTap,
@@ -40,7 +43,7 @@ class _CurrencyRow extends StatelessWidget {
                     currency?.code ?? '',
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: _AppColors.textMain,
+                      color: AppColors.textMain,
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                     ),
@@ -52,7 +55,7 @@ class _CurrencyRow extends StatelessWidget {
             Text(
               valueText,
               style: const TextStyle(
-                color: _AppColors.textMain,
+                color: AppColors.textMain,
                 fontSize: 48,
                 fontWeight: FontWeight.w500,
               ),
@@ -64,45 +67,45 @@ class _CurrencyRow extends StatelessWidget {
   }
 }
 
-class _DividerLine extends StatelessWidget {
-  const _DividerLine();
+class DividerLine extends StatelessWidget {
+  const DividerLine();
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
       height: 1,
-      color: _AppColors.dividerLine,
+      color: AppColors.dividerLine,
     );
   }
 }
 
-class _Keypad extends StatelessWidget {
-  const _Keypad({required this.onKeyPressed});
+class Keypad extends StatelessWidget {
+  const Keypad({required this.onKeyPressed});
 
   final void Function(String) onKeyPressed;
 
-  static const List<_KeyDefinition> _keys = [
-    _KeyDefinition('C', _AppColors.keyRow1Bg),
-    _KeyDefinition('←', _AppColors.keyRow1Bg),
-    _KeyDefinition('↑↓', _AppColors.keyRow1Bg),
-    _KeyDefinition('÷', _AppColors.keyOpBg),
-    _KeyDefinition('7', _AppColors.keyNumBg),
-    _KeyDefinition('8', _AppColors.keyNumBg),
-    _KeyDefinition('9', _AppColors.keyNumBg),
-    _KeyDefinition('×', _AppColors.keyOpBg),
-    _KeyDefinition('4', _AppColors.keyNumBg),
-    _KeyDefinition('5', _AppColors.keyNumBg),
-    _KeyDefinition('6', _AppColors.keyNumBg),
-    _KeyDefinition('−', _AppColors.keyOpBg),
-    _KeyDefinition('1', _AppColors.keyNumBg),
-    _KeyDefinition('2', _AppColors.keyNumBg),
-    _KeyDefinition('3', _AppColors.keyNumBg),
-    _KeyDefinition('+', _AppColors.keyOpBg),
-    _KeyDefinition('0', _AppColors.keyNumBg),
-    _KeyDefinition('.', _AppColors.keyNumBg),
-    _KeyDefinition('%', _AppColors.keyNumBg),
-    _KeyDefinition('=', _AppColors.keyOpBg),
+  static const List<KeyDefinition> _keys = [
+    KeyDefinition('C', AppColors.keyRow1Bg),
+    KeyDefinition('←', AppColors.keyRow1Bg),
+    KeyDefinition('↑↓', AppColors.keyRow1Bg),
+    KeyDefinition('÷', AppColors.keyOpBg),
+    KeyDefinition('7', AppColors.keyNumBg),
+    KeyDefinition('8', AppColors.keyNumBg),
+    KeyDefinition('9', AppColors.keyNumBg),
+    KeyDefinition('×', AppColors.keyOpBg),
+    KeyDefinition('4', AppColors.keyNumBg),
+    KeyDefinition('5', AppColors.keyNumBg),
+    KeyDefinition('6', AppColors.keyNumBg),
+    KeyDefinition('−', AppColors.keyOpBg),
+    KeyDefinition('1', AppColors.keyNumBg),
+    KeyDefinition('2', AppColors.keyNumBg),
+    KeyDefinition('3', AppColors.keyNumBg),
+    KeyDefinition('+', AppColors.keyOpBg),
+    KeyDefinition('0', AppColors.keyNumBg),
+    KeyDefinition('.', AppColors.keyNumBg),
+    KeyDefinition('%', AppColors.keyNumBg),
+    KeyDefinition('=', AppColors.keyOpBg),
   ];
 
   @override
@@ -119,7 +122,7 @@ class _Keypad extends StatelessWidget {
         itemCount: _keys.length,
         itemBuilder: (context, index) {
           final key = _keys[index];
-          return _KeyButton(
+          return KeyButton(
             label: key.label,
             backgroundColor: key.color,
             onPressed: () => onKeyPressed(key.label),
@@ -130,8 +133,8 @@ class _Keypad extends StatelessWidget {
   }
 }
 
-class _KeyButton extends StatefulWidget {
-  const _KeyButton({
+class KeyButton extends StatefulWidget {
+  const KeyButton({
     required this.label,
     required this.backgroundColor,
     required this.onPressed,
@@ -142,10 +145,10 @@ class _KeyButton extends StatefulWidget {
   final VoidCallback onPressed;
 
   @override
-  State<_KeyButton> createState() => _KeyButtonState();
+  State<KeyButton> createState() => KeyButtonState();
 }
 
-class _KeyButtonState extends State<_KeyButton> {
+class KeyButtonState extends State<KeyButton> {
   double _scale = 1.0;
 
   void _handleTapDown(TapDownDetails details) {
@@ -178,7 +181,7 @@ class _KeyButtonState extends State<_KeyButton> {
             child: Text(
               widget.label,
               style: const TextStyle(
-                color: _AppColors.textMain,
+                color: AppColors.textMain,
                 fontSize: 32,
                 fontWeight: FontWeight.w500,
               ),
@@ -190,8 +193,8 @@ class _KeyButtonState extends State<_KeyButton> {
   }
 }
 
-class _RatePanel extends StatelessWidget {
-  const _RatePanel({
+class RatePanel extends StatelessWidget {
+  const RatePanel({
     required this.dateTimeText,
     required this.rateText,
     required this.onTap,
@@ -200,3 +203,53 @@ class _RatePanel extends StatelessWidget {
   final String dateTimeText;
   final String rateText;
   final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(18, 12, 18, 16),
+        decoration: const BoxDecoration(
+          color: AppColors.keyRow1Bg,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              dateTimeText,
+              style: const TextStyle(
+                color: AppColors.textDate,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    rateText,
+                    style: const TextStyle(
+                      color: AppColors.textMain,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.query_stats,
+                  color: AppColors.textMain,
+                  size: 22,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

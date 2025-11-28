@@ -1,4 +1,7 @@
-part of 'package:currency/main.dart';
+import 'dart:math' as math;
+
+import 'package:circle_flags/circle_flags.dart';
+import 'package:flutter/material.dart';
 
 class Currency {
   const Currency({
