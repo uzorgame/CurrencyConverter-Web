@@ -264,7 +264,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
   }
 
   void _handleKeyPress(String label) {
-    if (RegExp(r'^[0-9]$').hasMatch(label)) {
+    // ⚡ ОПТИМИЗАЦИЯ: Используем static RegExp
+    if (_digitRegex.hasMatch(label)) {
       _handleDigit(label);
       return;
     }
