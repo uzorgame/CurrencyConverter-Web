@@ -1512,7 +1512,7 @@ class _LabelOverlapTracker {
 
 class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
   final Map<_HistoryInterval, List<HistoricalRate>> _cache = {};
-  _HistoryInterval _interval = _HistoryInterval.days7;
+  _HistoryInterval _interval = _HistoryInterval.days30;
   bool _loading = true;
   List<HistoricalRate> _currentRates = const [];
 
@@ -1986,7 +1986,6 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
 }
 
 enum _HistoryInterval {
-  days7,
   days30,
   months3,
   months6,
@@ -1996,8 +1995,6 @@ enum _HistoryInterval {
 extension on _HistoryInterval {
   String get label {
     switch (this) {
-      case _HistoryInterval.days7:
-        return '7d';
       case _HistoryInterval.days30:
         return '30d';
       case _HistoryInterval.months3:
@@ -2011,8 +2008,6 @@ extension on _HistoryInterval {
 
   int get days {
     switch (this) {
-      case _HistoryInterval.days7:
-        return 7;
       case _HistoryInterval.days30:
         return 30;
       case _HistoryInterval.months3:

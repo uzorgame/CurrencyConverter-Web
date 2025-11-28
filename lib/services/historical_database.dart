@@ -61,15 +61,16 @@ class HistoricalDatabase {
   Future<List<HistoricalRate>> loadLatest({
     required String base,
     required String target,
-    required int limit,
+    required int days,
   }) async {
     final db = await database;
+    final cutoff = DateTime.now().subtract(Duration(days: days - 1));
+    final cutoffString = cutoff.toIso8601String().split('T').first;
     final rows = await db.query(
       'historical_rates',
-      where: 'base = ? AND target = ?',
-      whereArgs: [base, target],
       orderBy: 'date DESC',
-      limit: limit,
+      where: 'base = ? AND target = ? AND date >= ?',
+      whereArgs: [base, target, cutoffString],
     );
     return rows.map((row) => HistoricalRate.fromMap(row)).toList();
   }

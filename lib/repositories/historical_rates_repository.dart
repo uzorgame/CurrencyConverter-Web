@@ -42,7 +42,7 @@ class HistoricalRatesRepository {
     required String target,
     required int days,
   }) async {
-    final cached = await database.loadLatest(base: base, target: target, limit: days);
+    final cached = await database.loadLatest(base: base, target: target, days: days);
     return cached.reversed.toList();
   }
 
@@ -106,7 +106,7 @@ class HistoricalRatesRepository {
     final normalized = _normalizeDate(latestDate);
     final fiveYearsAgo = DateTime(normalized.year - 5, normalized.month, normalized.day);
     final oneYearAgo = normalized.subtract(const Duration(days: 365));
-    return fiveYearsAgo.isBefore(oneYearAgo) ? fiveYearsAgo : oneYearAgo;
+    return fiveYearsAgo.isAfter(oneYearAgo) ? fiveYearsAgo : oneYearAgo;
   }
 
   DateTime _normalizeDate(DateTime date) => DateTime(date.year, date.month, date.day);
