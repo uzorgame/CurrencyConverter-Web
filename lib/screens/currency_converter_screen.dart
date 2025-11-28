@@ -552,13 +552,14 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     context.read<CurrencyProvider>().setAmountInput(_topDisplay);
   }
 
+  // ⚡ ОПТИМИЗАЦИЯ: Используем Map для O(1) поиска вместо O(n)
   Currency? _findCurrency(String code, List<Currency> availableCurrencies) {
-    for (final currency in availableCurrencies) {
-      if (currency.code == code) {
-        return currency;
-      }
-    }
-    return null;
+    _currencyMap ??= {
+      for (var currency in availableCurrencies)
+        currency.code: currency
+    };
+    
+    return _currencyMap![code];
   }
 
   double _getActiveValue() => _parseDisplayValue(_getActiveDisplay());
