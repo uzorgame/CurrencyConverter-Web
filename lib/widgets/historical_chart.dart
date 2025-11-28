@@ -231,6 +231,12 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
 
   Widget _buildChart() {
     const minimumLabelSpacing = 4.0;
+    final minRate =
+        _currentRates.map((rate) => rate.rate).reduce(math.min).toDouble();
+    final maxRate =
+        _currentRates.map((rate) => rate.rate).reduce(math.max).toDouble();
+    final startDate = _currentRates.first.date;
+    final lastUpdatedDate = widget.lastUpdated;
     final spots = _currentRates.map((rate) {
       return FlSpot(
         rate.date.millisecondsSinceEpoch.toDouble(),
@@ -329,17 +335,19 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
 
     return SizedBox(
       height: 320,
-      child: Padding(
-        padding: const EdgeInsets.only(right: 6),
-        child: LineChart(
-          LineChartData(
-            minY: minY,
-            maxY: maxY,
-            minX: minX,
-            maxX: maxX,
-            gridData: FlGridData(show: false),
-            lineTouchData: LineTouchData(
-              touchTooltipData: LineTouchTooltipData(
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: LineChart(
+              LineChartData(
+                minY: minY,
+                maxY: maxY,
+                minX: minX,
+                maxX: maxX,
+                gridData: FlGridData(show: false),
+                lineTouchData: LineTouchData(
+                  touchTooltipData: LineTouchTooltipData(
                 getTooltipColor: (_) => const Color(0xFF1E1E1E),
                 tooltipRoundedRadius: 12,
                 tooltipPadding: const EdgeInsets.all(8),
@@ -465,30 +473,88 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
                   },
                 ),
               ),
-            ),
-            borderData: FlBorderData(show: false),
-            lineBarsData: [
-              LineChartBarData(
-                isCurved: true,
-                barWidth: 2,
-                dotData: const FlDotData(show: false),
-                color: _AppColors.keyOpBg,
-                belowBarData: BarAreaData(
-                  show: true,
-                  gradient: LinearGradient(
-                    colors: [
-                      _AppColors.keyOpBg.withOpacity(0.25),
-                      _AppColors.keyOpBg.withOpacity(0.05),
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
                 ),
-                spots: spots,
+                borderData: FlBorderData(show: false),
+                lineBarsData: [
+                  LineChartBarData(
+                    isCurved: true,
+                    barWidth: 2,
+                    dotData: const FlDotData(show: false),
+                    color: _AppColors.keyOpBg,
+                    belowBarData: BarAreaData(
+                      show: true,
+                      gradient: LinearGradient(
+                        colors: [
+                          _AppColors.keyOpBg.withOpacity(0.25),
+                          _AppColors.keyOpBg.withOpacity(0.05),
+                        ],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                    ),
+                    spots: spots,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+          Positioned(
+            left: 12,
+            top: 8,
+            child: IgnorePointer(
+              child: Text(
+                _formatRateLabel(maxRate),
+                style: const TextStyle(
+                  color: _AppColors.textRate,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 12,
+            bottom: 44,
+            child: IgnorePointer(
+              child: Text(
+                _formatRateLabel(minRate),
+                style: const TextStyle(
+                  color: _AppColors.textRate,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 12,
+            bottom: 16,
+            child: IgnorePointer(
+              child: Text(
+                _formatFullDate(startDate),
+                style: const TextStyle(
+                  color: _AppColors.textDate,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 12,
+            bottom: 16,
+            child: IgnorePointer(
+              child: Text(
+                _formatFullDate(lastUpdatedDate),
+                style: const TextStyle(
+                  color: _AppColors.textDate,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -549,6 +615,16 @@ class _HistoryChartBottomSheetState extends State<HistoryChartBottomSheet> {
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
     return '$day.$month.${date.year}';
+  }
+
+  String _formatRateLabel(double rate) {
+    if (rate >= 1) {
+      return rate.toStringAsFixed(2);
+    }
+    if (rate >= 0.1) {
+      return rate.toStringAsFixed(3);
+    }
+    return rate.toStringAsFixed(4);
   }
 }
 
