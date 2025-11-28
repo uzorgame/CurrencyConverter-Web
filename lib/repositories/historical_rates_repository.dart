@@ -17,107 +17,49 @@ class HistoricalRatesRepository {
   final CurrencyRepository currencyRepository;
   static const _defaultCurrencies = ['USD', 'EUR', 'PLN', 'GBP', 'TRY'];
 
-  // ⚡ ОПТИМИЗАЦИЯ: Добавлен флаг инициализации
-  bool _isInitialized = false;
-  Completer<void>? _initCompleter;
-
-  // ⚡ ОПТИМИЗАЦИЯ: Старый метод для совместимости (теперь не блокирующий)
-  @Deprecated('Use initializeAsync() for background init')
+  // ✅ УПРОЩЕНО: Простая инициализация без сложной логики
   Future<void> initialize() async {
-    return initializeAsync();
-  }
-
-  // ⚡ ОПТИМИЗАЦИЯ: Асинхронная инициализация (не блокирует UI)
-  Future<void> initializeAsync() async {
-    if (_isInitialized) return;
-    if (_initCompleter != null) return _initCompleter!.future;
-
-    _initCompleter = Completer<void>();
-
-    try {
-      // 🔧 ИСПРАВЛЕНО: Сначала инициализируем БД (быстро)
-      await database.database;
-      
-      // Сразу помечаем как инициализированную после создания БД
-      _isInitialized = true;
-      _initCompleter!.complete();
-      
-      // Теперь загружаем данные в фоне (медленно, но не блокирует)
-      _preloadHistoricalData();
-    } catch (e) {
-      _initCompleter!.completeError(e);
-      _initCompleter = null;
-      _isInitialized = false;
-      rethrow;
-    }
-  }
-  
-  // 🔧 ИСПРАВЛЕНО: Предзагрузка данных в фоне (не блокирует)
-  void _preloadHistoricalData() {
-    // Запускаем в фоне без await
-    Future(() async {
-      try {
-        final currencySet = <String>{..._defaultCurrencies};
-
-        final savedFrom = currencyRepository.loadLastFromCurrency();
-        final savedTo = currencyRepository.loadLastToCurrency();
-        final favorites = currencyRepository.loadFavoriteCurrencies();
-
-        if (savedFrom != null) currencySet.add(savedFrom);
-        if (savedTo != null) currencySet.add(savedTo);
-        currencySet.addAll(favorites);
-
-        final pairs = _buildPairs(currencySet.toList());
-        
-        // Ограничиваем количество пар для быстрой предзагрузки
-        final priorityPairs = pairs.take(10).toList();
-        
-        for (final pair in priorityPairs) {
-          try {
-            await _syncPair(pair.$1, pair.$2);
-          } catch (_) {
-            // Игнорируем ошибки при фоновой загрузке
-          }
-        }
-      } catch (_) {
-        // Игнорируем ошибки предзагрузки
-      }
-    });
-  }
-
-  // ⚡ ОПТИМИЗАЦИЯ: Ленивая загрузка - инициализация при первом использовании
-  Future<void> _ensureInitialized() async {
-    if (_isInitialized) return;
+    // Инициализируем БД
+    await database.database;
     
-    // 🔧 ИСПРАВЛЕНО: Простая логика - либо ждём либо запускаем
-    if (_initCompleter != null) {
+    // Загружаем минимальный набор данных для быстрого старта
+    final currencySet = <String>{..._defaultCurrencies};
+
+    final savedFrom = currencyRepository.loadLastFromCurrency();
+    final savedTo = currencyRepository.loadLastToCurrency();
+    final favorites = currencyRepository.loadFavoriteCurrencies();
+
+    if (savedFrom != null) currencySet.add(savedFrom);
+    if (savedTo != null) currencySet.add(savedTo);
+    currencySet.addAll(favorites);
+
+    final pairs = _buildPairs(currencySet.toList());
+    
+    // Синхронизируем только приоритетные пары (быстро)
+    final priorityPairs = pairs.take(10).toList();
+    
+    for (final pair in priorityPairs) {
       try {
-        await _initCompleter!.future;
+        await _syncPair(pair.$1, pair.$2);
       } catch (_) {
-        _initCompleter = null;
-        _isInitialized = false;
+        // Игнорируем ошибки - продолжаем работу
       }
     }
-    
-    if (!_isInitialized) {
-      await initializeAsync();
-    }
   }
+
+  // Для обратной совместимости
+  Future<void> initializeAsync() => initialize();
 
   Future<List<HistoricalRate>> loadLatest({
     required String base,
     required String target,
     required int days,
   }) async {
-    // 🔧 ИСПРАВЛЕНО: Обязательно инициализируем БД перед запросом
-    await _ensureInitialized();
     final cached = await database.loadLatest(base: base, target: target, days: days);
     return cached.reversed.toList();
   }
 
   Future<void> ensurePairFreshness(String base, String target) async {
-    // 🔧 ИСПРАВЛЕНО: Обязательно инициализируем БД перед синхронизацией
-    await _ensureInitialized();
     await _syncPair(base, target);
   }
 
