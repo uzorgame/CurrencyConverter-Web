@@ -147,13 +147,17 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     );
   }
 
+  // ⚡ ОПТИМИЗАЦИЯ: Кэшируем список валют чтобы не пересоздавать каждый раз
   List<Currency> _availableCurrencies(CurrencyProvider provider) {
+    if (_cachedCurrencies != null) return _cachedCurrencies!;
+    
     if (provider.currencyNames.isNotEmpty) {
       final entries = provider.currencyNames.entries.toList()
         ..sort((a, b) => a.key.compareTo(b.key));
-      return entries
+      _cachedCurrencies = entries
           .map((entry) => Currency(code: entry.key, name: entry.value))
           .toList();
+      return _cachedCurrencies!;
     }
 
     return constants.currencies;
