@@ -35,37 +35,54 @@ class HistoricalRatesRepository {
     _initCompleter = Completer<void>();
 
     try {
+      // 🔧 ИСПРАВЛЕНО: Сначала инициализируем БД (быстро)
       await database.database;
-      final currencySet = <String>{..._defaultCurrencies};
-
-      final savedFrom = currencyRepository.loadLastFromCurrency();
-      final savedTo = currencyRepository.loadLastToCurrency();
-      final favorites = currencyRepository.loadFavoriteCurrencies();
-
-      if (savedFrom != null) currencySet.add(savedFrom);
-      if (savedTo != null) currencySet.add(savedTo);
-      currencySet.addAll(favorites);
-
-      final pairs = _buildPairs(currencySet.toList());
       
-      // ⚡ ОПТИМИЗАЦИЯ: Ограничиваем количество пар для быстрой инициализации
-      final priorityPairs = pairs.take(10).toList();
-      
-      for (final pair in priorityPairs) {
-        try {
-          await _syncPair(pair.$1, pair.$2);
-        } catch (_) {
-          // Игнорируем ошибки при фоновой инициализации
-        }
-      }
-
+      // Сразу помечаем как инициализированную после создания БД
       _isInitialized = true;
       _initCompleter!.complete();
+      
+      // Теперь загружаем данные в фоне (медленно, но не блокирует)
+      _preloadHistoricalData();
     } catch (e) {
       _initCompleter!.completeError(e);
       _initCompleter = null;
+      _isInitialized = false;
       rethrow;
     }
+  }
+  
+  // 🔧 ИСПРАВЛЕНО: Предзагрузка данных в фоне (не блокирует)
+  void _preloadHistoricalData() {
+    // Запускаем в фоне без await
+    Future(() async {
+      try {
+        final currencySet = <String>{..._defaultCurrencies};
+
+        final savedFrom = currencyRepository.loadLastFromCurrency();
+        final savedTo = currencyRepository.loadLastToCurrency();
+        final favorites = currencyRepository.loadFavoriteCurrencies();
+
+        if (savedFrom != null) currencySet.add(savedFrom);
+        if (savedTo != null) currencySet.add(savedTo);
+        currencySet.addAll(favorites);
+
+        final pairs = _buildPairs(currencySet.toList());
+        
+        // Ограничиваем количество пар для быстрой предзагрузки
+        final priorityPairs = pairs.take(10).toList();
+        
+        for (final pair in priorityPairs) {
+          try {
+            await _syncPair(pair.$1, pair.$2);
+          } catch (_) {
+            // Игнорируем ошибки при фоновой загрузке
+          }
+        }
+      } catch (_) {
+        // Игнорируем ошибки предзагрузки
+      }
+    });
   }
 
   // ⚡ ОПТИМИЗАЦИЯ: Ленивая загрузка - инициализация при первом использовании
