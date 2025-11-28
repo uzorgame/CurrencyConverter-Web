@@ -59,14 +59,28 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currencyProvider = context.watch<CurrencyProvider>();
+    // ⚡ ОПТИМИЗАЦИЯ: Используем Selector для частичных обновлений вместо watch
+    final status = context.select<CurrencyProvider, CurrencyStatus>(
+      (provider) => provider.status
+    );
+    final rates = context.select<CurrencyProvider, Map<String, double>>(
+      (provider) => provider.rates
+    );
+    final currencyNames = context.select<CurrencyProvider, Map<String, String>>(
+      (provider) => provider.currencyNames
+    );
+    final lastUpdated = context.select<CurrencyProvider, DateTime>(
+      (provider) => provider.lastUpdated
+    );
+    
+    final currencyProvider = context.read<CurrencyProvider>();
     final currencies = _availableCurrencies(currencyProvider);
     _maybeSyncWithProvider(currencyProvider, currencies);
 
     final fromCurrency = _findCurrency(_fromCurrency, currencies);
     final toCurrency = _findCurrency(_toCurrency, currencies);
     final rateText = _formatRateText();
-    final dateTimeText = _formatLastUpdated(currencyProvider.lastUpdated);
+    final dateTimeText = _formatLastUpdated(lastUpdated);
 
     return Scaffold(
       body: SafeArea(
