@@ -23,7 +23,7 @@ class HistoricalDatabase {
     final dbPath = await getDatabasesPath();
     final path = p.join(dbPath, _dbName);
 
-    final db = await openDatabase(
+    return openDatabase(
       path,
       version: _dbVersion,
       onCreate: (db, version) async {
@@ -42,15 +42,6 @@ class HistoricalDatabase {
         );
       },
     );
-
-    // ⚡ ОПТИМИЗАЦИЯ: SQLite PRAGMA для увеличения производительности
-    await db.execute('PRAGMA journal_mode = WAL'); // Write-Ahead Logging (быстрее записи)
-    await db.execute('PRAGMA synchronous = NORMAL'); // Баланс скорости/надёжности
-    await db.execute('PRAGMA cache_size = -64000'); // 64MB кэш в памяти
-    await db.execute('PRAGMA temp_store = MEMORY'); // Временные данные в RAM
-    await db.execute('PRAGMA mmap_size = 30000000000'); // Memory-mapped I/O
-
-    return db;
   }
 
   Future<void> upsertRates(List<HistoricalRate> rates) async {

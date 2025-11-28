@@ -17,7 +17,6 @@ String formatAmount(double value) {
 String _trimTrailingZeros(String value) {
   if (!value.contains('.')) return value;
 
-  // Убираем trailing zeros после десятичной точки
   var trimmed = value.replaceFirst(RegExp(r'\.0+$'), '');
   trimmed = trimmed.replaceFirst(RegExp(r'(\.\d*?[1-9])0+$'), r'$1');
 

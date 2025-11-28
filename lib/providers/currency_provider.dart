@@ -62,8 +62,6 @@ class CurrencyProvider extends ChangeNotifier {
   }
 
   void setFromCurrency(String value) {
-    // ⚡ ОПТИМИЗАЦИЯ: Не notify если значение не изменилось
-    if (fromCurrency == value) return;
     fromCurrency = value;
     repository.saveLastFromCurrency(value);
     _recalculateInternal();
@@ -71,8 +69,6 @@ class CurrencyProvider extends ChangeNotifier {
   }
 
   void setToCurrency(String value) {
-    // ⚡ ОПТИМИЗАЦИЯ: Не notify если значение не изменилось
-    if (toCurrency == value) return;
     toCurrency = value;
     repository.saveLastToCurrency(value);
     _recalculateInternal();
@@ -80,8 +76,6 @@ class CurrencyProvider extends ChangeNotifier {
   }
 
   void setAmount(double value) {
-    // ⚡ ОПТИМИЗАЦИЯ: Не notify если значение не изменилось
-    if (amount == value) return;
     amount = value;
     amountInput = value.toString();
     repository.saveLastAmount(amountInput);
@@ -95,32 +89,11 @@ class CurrencyProvider extends ChangeNotifier {
   }
 
   void setAmountInput(String value) {
-    // ⚡ ОПТИМИЗАЦИЯ: Не notify если значение не изменилось
-    if (amountInput == value) return;
     amountInput = value;
     amount = _parseAmount(value);
     repository.saveLastAmount(value);
     _recalculateInternal();
     notifyListeners();
-  }
-  
-  // ⚡ ОПТИМИЗАЦИЯ: Батчинг - обновить несколько полей за один раз
-  void updateCurrencies(String from, String to, {bool shouldNotify = true}) {
-    bool changed = false;
-    if (fromCurrency != from) {
-      fromCurrency = from;
-      repository.saveLastFromCurrency(from);
-      changed = true;
-    }
-    if (toCurrency != to) {
-      toCurrency = to;
-      repository.saveLastToCurrency(to);
-      changed = true;
-    }
-    if (changed) {
-      _recalculateInternal();
-      if (shouldNotify) notifyListeners();
-    }
   }
 
   void toggleFavorite(String code) {

@@ -17,12 +17,8 @@ class HistoricalRatesRepository {
   final CurrencyRepository currencyRepository;
   static const _defaultCurrencies = ['USD', 'EUR', 'PLN', 'GBP', 'TRY'];
 
-  // ✅ УПРОЩЕНО: Простая инициализация без сложной логики
   Future<void> initialize() async {
-    // Инициализируем БД
     await database.database;
-    
-    // Загружаем минимальный набор данных для быстрого старта
     final currencySet = <String>{..._defaultCurrencies};
 
     final savedFrom = currencyRepository.loadLastFromCurrency();
@@ -34,21 +30,12 @@ class HistoricalRatesRepository {
     currencySet.addAll(favorites);
 
     final pairs = _buildPairs(currencySet.toList());
-    
-    // Синхронизируем только приоритетные пары (быстро)
-    final priorityPairs = pairs.take(10).toList();
-    
-    for (final pair in priorityPairs) {
+    for (final pair in pairs) {
       try {
         await _syncPair(pair.$1, pair.$2);
-      } catch (_) {
-        // Игнорируем ошибки - продолжаем работу
-      }
+      } catch (_) {}
     }
   }
-
-  // Для обратной совместимости
-  Future<void> initializeAsync() => initialize();
 
   Future<List<HistoricalRate>> loadLatest({
     required String base,
