@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/currency_api.dart';
@@ -74,21 +75,15 @@ class CurrencyRepository {
         ? DateTime.fromMillisecondsSinceEpoch(cachedTimestamp)
         : null;
     final storedLastUpdated = _restoreLastUpdatedDate();
-    final isRecent = cachedTimestamp != null &&
-        now.millisecondsSinceEpoch - cachedTimestamp <=
-            const Duration(hours: 24).inMilliseconds;
 
-    if (_rates.isNotEmpty && isRecent) {
-      return;
-    }
+    // Step 1: Load cache first (if available) to show data immediately
+    // This ensures UI can display data even if API fails
+    final hasCache = _restoreRatesFromCache(
+      dateOverride: storedLastUpdated ?? cachedDate,
+    );
 
-    if (isRecent &&
-        _restoreRatesFromCache(
-          dateOverride: storedLastUpdated ?? cachedDate,
-        )) {
-      return;
-    }
-
+    // Step 2: Always try to fetch fresh data from API
+    // This ensures we check for updates on every app launch
     try {
       final latest = await api.getLatestRates();
       _rates = latest.rates;
@@ -98,39 +93,82 @@ class CurrencyRepository {
         _lastRatesTimestampKey,
         now.millisecondsSinceEpoch,
       );
+      // Success: fresh data loaded and cached
+      return;
     } catch (error) {
+      // API failed - use cache if available (even if old)
+      if (hasCache) {
+        // Cache was already loaded in step 1, so we're good
+        // Just log the error in debug mode
+        if (kDebugMode) {
+          print('API update failed, using cached data: $error');
+        }
+        return;
+      }
+
+      // No cache available and API failed
+      // Try to restore from any available cache as last resort
       final restored = _restoreRatesFromCache(
         dateOverride: storedLastUpdated ?? cachedDate,
       );
 
-      if (!restored &&
-          (error is SocketException || error is TimeoutException)) {
-        rethrow;
+      if (!restored) {
+        // No cache at all - this is first launch without internet
+        // Don't throw - let the app work with empty rates
+        // The UI will handle this gracefully
+        if (kDebugMode) {
+          print('No cache available and API failed: $error');
+        }
       }
-
-      if (!restored) rethrow;
     }
   }
 
   Future<void> loadCurrencies() async {
+    // Step 1: Load from cache first (if available)
+    final cached = prefs.getString(_currenciesKey);
+    final cachedNames = prefs.getString(_currencyNamesKey);
+    if (cached != null && cachedNames != null) {
+      try {
+        _currencies = List<String>.from(jsonDecode(cached) as List<dynamic>);
+        final decodedNames = jsonDecode(cachedNames) as Map<String, dynamic>;
+        _currencyNames = _filterSupportedCurrencies(
+          decodedNames.map(
+            (key, value) => MapEntry(key, value as String),
+          ),
+        );
+        _currencies = _currencyNames.keys.toList()..sort();
+      } catch (e) {
+        if (kDebugMode) {
+          print('Failed to parse cached currencies: $e');
+        }
+      }
+    }
+
+    // Step 2: Try to fetch fresh data from API
     try {
       final loaded = await api.getCurrencies();
       _currencyNames = _filterSupportedCurrencies(loaded);
       _currencies = _currencyNames.keys.toList()..sort();
       await prefs.setString(_currenciesKey, jsonEncode(_currencies));
       await prefs.setString(_currencyNamesKey, jsonEncode(_currencyNames));
-    } catch (_) {
-      final cached = prefs.getString(_currenciesKey);
-      final cachedNames = prefs.getString(_currencyNamesKey);
-      if (cached == null || cachedNames == null) rethrow;
-      _currencies = List<String>.from(jsonDecode(cached) as List<dynamic>);
-      final decodedNames = jsonDecode(cachedNames) as Map<String, dynamic>;
-      _currencyNames = _filterSupportedCurrencies(
-        decodedNames.map(
-          (key, value) => MapEntry(key, value as String),
-        ),
-      );
-      _currencies = _currencyNames.keys.toList()..sort();
+    } catch (error) {
+      // API failed - if we have cache, use it (already loaded in step 1)
+      if (cached == null || cachedNames == null) {
+        // No cache available - this is first launch without internet
+        // Use default supported currencies as fallback
+        _currencies = _supportedCurrencies.toList()..sort();
+        _currencyNames = _currencies.asMap().map(
+          (index, code) => MapEntry(code, code),
+        );
+        if (kDebugMode) {
+          print('No cache and API failed, using default currencies: $error');
+        }
+      } else {
+        // Cache was already loaded in step 1, so we're good
+        if (kDebugMode) {
+          print('API update failed, using cached currencies: $error');
+        }
+      }
     }
   }
 

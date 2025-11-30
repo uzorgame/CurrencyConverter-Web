@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -20,35 +21,44 @@ class CurrencyApi {
   CurrencyApi({http.Client? client}) : _client = client ?? http.Client();
 
   static const _baseUrl = 'https://api.frankfurter.app';
+  static const _timeoutDuration = Duration(seconds: 15);
 
   final http.Client _client;
   Map<String, double>? _latestRates;
 
   Future<LatestRatesResponse> getLatestRates() async {
     final uri = Uri.parse('$_baseUrl/latest');
-    final response = await _client.get(uri);
+    final response = await _client
+        .get(uri)
+        .timeout(_timeoutDuration, onTimeout: () {
+      throw TimeoutException('Request timeout', _timeoutDuration);
+    });
 
     if (response.statusCode != 200) {
-      throw http.ClientException('Failed to fetch rates', uri);
+      throw http.ClientException('Failed to fetch rates: ${response.statusCode}', uri);
     }
 
-    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-    final rates = Map<String, double>.from(
-      (decoded['rates'] as Map<String, dynamic>).map(
-        (key, value) => MapEntry(key, (value as num).toDouble()),
-      ),
-    );
+    try {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final rates = Map<String, double>.from(
+        (decoded['rates'] as Map<String, dynamic>).map(
+          (key, value) => MapEntry(key, (value as num).toDouble()),
+        ),
+      );
 
-    final date = DateTime.parse(decoded['date'] as String);
-    final base = decoded['base'] as String;
+      final date = DateTime.parse(decoded['date'] as String);
+      final base = decoded['base'] as String;
 
-    _latestRates = {...rates, base: 1.0};
+      _latestRates = {...rates, base: 1.0};
 
-    return LatestRatesResponse(
-      rates: _latestRates!,
-      date: date,
-      base: base,
-    );
+      return LatestRatesResponse(
+        rates: _latestRates!,
+        date: date,
+        base: base,
+      );
+    } catch (e) {
+      throw FormatException('Failed to parse API response: $e');
+    }
   }
 
   Future<HistoricalRate> getLatestRateForPair({
@@ -56,35 +66,51 @@ class CurrencyApi {
     required String target,
   }) async {
     final uri = Uri.parse('$_baseUrl/latest?from=$base&to=$target');
-    final response = await _client.get(uri);
+    final response = await _client
+        .get(uri)
+        .timeout(_timeoutDuration, onTimeout: () {
+      throw TimeoutException('Request timeout', _timeoutDuration);
+    });
 
     if (response.statusCode != 200) {
-      throw http.ClientException('Failed to fetch latest pair rate', uri);
+      throw http.ClientException('Failed to fetch latest pair rate: ${response.statusCode}', uri);
     }
 
-    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-    final date = DateTime.parse(decoded['date'] as String);
-    final rates = decoded['rates'] as Map<String, dynamic>;
-    final rate = (rates[target] as num).toDouble();
+    try {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final date = DateTime.parse(decoded['date'] as String);
+      final rates = decoded['rates'] as Map<String, dynamic>;
+      final rate = (rates[target] as num).toDouble();
 
-    return HistoricalRate(
-      date: date,
-      base: base,
-      target: target,
-      rate: rate,
-    );
+      return HistoricalRate(
+        date: date,
+        base: base,
+        target: target,
+        rate: rate,
+      );
+    } catch (e) {
+      throw FormatException('Failed to parse API response: $e');
+    }
   }
 
   Future<Map<String, String>> getCurrencies() async {
     final uri = Uri.parse('$_baseUrl/currencies');
-    final response = await _client.get(uri);
+    final response = await _client
+        .get(uri)
+        .timeout(_timeoutDuration, onTimeout: () {
+      throw TimeoutException('Request timeout', _timeoutDuration);
+    });
 
     if (response.statusCode != 200) {
-      throw http.ClientException('Failed to fetch currencies', uri);
+      throw http.ClientException('Failed to fetch currencies: ${response.statusCode}', uri);
     }
 
-    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-    return decoded.map((key, value) => MapEntry(key, value as String));
+    try {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      return decoded.map((key, value) => MapEntry(key, value as String));
+    } catch (e) {
+      throw FormatException('Failed to parse API response: $e');
+    }
   }
 
   double convert(String from, String to, double amount) {
@@ -112,32 +138,40 @@ class CurrencyApi {
     final start = _formatDate(startDate);
     final end = _formatDate(endDate);
     final uri = Uri.parse('$_baseUrl/$start..$end?from=$base&to=$target');
-    final response = await _client.get(uri);
-
-    if (response.statusCode != 200) {
-      throw http.ClientException('Failed to fetch historical rates', uri);
-    }
-
-    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-    final rawRates = decoded['rates'] as Map<String, dynamic>;
-
-    final result = <HistoricalRate>[];
-    rawRates.forEach((dateString, value) {
-      final rateValue = (value as Map<String, dynamic>)[target];
-      if (rateValue != null) {
-        result.add(
-          HistoricalRate(
-            date: DateTime.parse(dateString as String),
-            base: base,
-            target: target,
-            rate: (rateValue as num).toDouble(),
-          ),
-        );
-      }
+    final response = await _client
+        .get(uri)
+        .timeout(_timeoutDuration, onTimeout: () {
+      throw TimeoutException('Request timeout', _timeoutDuration);
     });
 
-    result.sort((a, b) => a.date.compareTo(b.date));
-    return result;
+    if (response.statusCode != 200) {
+      throw http.ClientException('Failed to fetch historical rates: ${response.statusCode}', uri);
+    }
+
+    try {
+      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+      final rawRates = decoded['rates'] as Map<String, dynamic>;
+
+      final result = <HistoricalRate>[];
+      rawRates.forEach((dateString, value) {
+        final rateValue = (value as Map<String, dynamic>)[target];
+        if (rateValue != null) {
+          result.add(
+            HistoricalRate(
+              date: DateTime.parse(dateString as String),
+              base: base,
+              target: target,
+              rate: (rateValue as num).toDouble(),
+            ),
+          );
+        }
+      });
+
+      result.sort((a, b) => a.date.compareTo(b.date));
+      return result;
+    } catch (e) {
+      throw FormatException('Failed to parse API response: $e');
+    }
   }
 
   String _formatDate(DateTime date) {

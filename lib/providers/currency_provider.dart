@@ -27,6 +27,7 @@ class CurrencyProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Load rates and currencies in parallel for faster startup
       await Future.wait([
         repository.loadRates(),
         repository.loadCurrencies(),
@@ -36,11 +37,13 @@ class CurrencyProvider extends ChangeNotifier {
       currencies = repository.currencies;
       currencyNames = repository.currencyNames;
 
+      // Validate and load favorite currencies
       favoriteCurrencies = repository
           .loadFavoriteCurrencies()
           .where((code) => rates.containsKey(code))
           .toList();
 
+      // Restore saved state with validation
       final savedFrom = repository.loadLastFromCurrency();
       final savedTo = repository.loadLastToCurrency();
       final savedAmount = repository.loadLastAmount();
@@ -54,8 +57,37 @@ class CurrencyProvider extends ChangeNotifier {
 
       _recalculateInternal();
       status = CurrencyStatus.loaded;
-    } catch (_) {
-      status = CurrencyStatus.error;
+    } catch (error) {
+      // Handle errors gracefully - try to use cached data
+      // If rates or currencies are empty, mark as error
+      if (rates.isEmpty || currencies.isEmpty) {
+        status = CurrencyStatus.error;
+        // Ensure we have at least default currencies even on error
+        if (currencies.isEmpty) {
+          // Use default supported currencies as fallback
+          currencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'BRL'];
+          currencyNames = currencies.asMap().map(
+            (index, code) => MapEntry(code, code),
+          );
+        }
+        if (rates.isEmpty) {
+          // Can't work without rates - set error status
+          status = CurrencyStatus.error;
+        }
+      } else {
+        // We have some data (from cache), so mark as loaded
+        status = CurrencyStatus.loaded;
+      }
+      
+      // Set default currencies if not set
+      if (fromCurrency.isEmpty && currencies.isNotEmpty) {
+        fromCurrency = currencies.first;
+      }
+      if (toCurrency.isEmpty && currencies.length > 1) {
+        toCurrency = currencies[1];
+      } else if (toCurrency.isEmpty) {
+        toCurrency = fromCurrency;
+      }
     }
 
     notifyListeners();

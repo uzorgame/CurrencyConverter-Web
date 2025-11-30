@@ -18,22 +18,38 @@ class HistoricalRatesRepository {
   static const _defaultCurrencies = ['USD', 'EUR', 'PLN', 'GBP', 'TRY'];
 
   Future<void> initialize() async {
-    await database.database;
-    final currencySet = <String>{..._defaultCurrencies};
+    try {
+      await database.database;
+      final currencySet = <String>{..._defaultCurrencies};
 
-    final savedFrom = currencyRepository.loadLastFromCurrency();
-    final savedTo = currencyRepository.loadLastToCurrency();
-    final favorites = currencyRepository.loadFavoriteCurrencies();
+      final savedFrom = currencyRepository.loadLastFromCurrency();
+      final savedTo = currencyRepository.loadLastToCurrency();
+      final favorites = currencyRepository.loadFavoriteCurrencies();
 
-    if (savedFrom != null) currencySet.add(savedFrom);
-    if (savedTo != null) currencySet.add(savedTo);
-    currencySet.addAll(favorites);
+      if (savedFrom != null && savedFrom.isNotEmpty) currencySet.add(savedFrom);
+      if (savedTo != null && savedTo.isNotEmpty) currencySet.add(savedTo);
+      currencySet.addAll(favorites.where((code) => code.isNotEmpty));
 
-    final pairs = _buildPairs(currencySet.toList());
-    for (final pair in pairs) {
-      try {
-        await _syncPair(pair.$1, pair.$2);
-      } catch (_) {}
+      // Limit pairs to prevent excessive API calls on startup
+      final limitedSet = currencySet.take(10).toList();
+      final pairs = _buildPairs(limitedSet);
+      
+      // Process pairs with error handling
+      for (final pair in pairs) {
+        try {
+          await _syncPair(pair.$1, pair.$2).timeout(
+            const Duration(seconds: 5),
+            onTimeout: () {
+              // Skip timeout pairs to prevent blocking
+            },
+          );
+        } catch (_) {
+          // Continue with other pairs on error
+        }
+      }
+    } catch (_) {
+      // Initialization errors are handled silently
+      // App can work without historical data
     }
   }
 
