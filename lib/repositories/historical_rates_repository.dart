@@ -20,6 +20,10 @@ class HistoricalRatesRepository {
   Future<void> initialize() async {
     try {
       await database.database;
+      
+      // Check if this is first launch (no historical data exists)
+      final isFirstLaunch = !(await database.hasAnyRates());
+      
       final currencySet = <String>{..._defaultCurrencies};
 
       final savedFrom = currencyRepository.loadLastFromCurrency();
@@ -30,6 +34,7 @@ class HistoricalRatesRepository {
       if (savedTo != null && savedTo.isNotEmpty) currencySet.add(savedTo);
       currencySet.addAll(favorites.where((code) => code.isNotEmpty));
 
+      // On first launch, prioritize loading historical data for last year
       // Limit pairs to prevent excessive API calls on startup
       final limitedSet = currencySet.take(10).toList();
       final pairs = _buildPairs(limitedSet);
@@ -37,12 +42,23 @@ class HistoricalRatesRepository {
       // Process pairs with error handling
       for (final pair in pairs) {
         try {
-          await _syncPair(pair.$1, pair.$2).timeout(
-            const Duration(seconds: 5),
-            onTimeout: () {
-              // Skip timeout pairs to prevent blocking
-            },
-          );
+          if (isFirstLaunch) {
+            // On first launch, ensure we load at least one year of data
+            await _syncPairWithYearHistory(pair.$1, pair.$2).timeout(
+              const Duration(seconds: 10),
+              onTimeout: () {
+                // Skip timeout pairs to prevent blocking
+              },
+            );
+          } else {
+            // On subsequent launches, just sync missing data
+            await _syncPair(pair.$1, pair.$2).timeout(
+              const Duration(seconds: 5),
+              onTimeout: () {
+                // Skip timeout pairs to prevent blocking
+              },
+            );
+          }
         } catch (_) {
           // Continue with other pairs on error
         }
@@ -86,15 +102,18 @@ class HistoricalRatesRepository {
     final desiredStart = _historyStartFrom(apiDate);
 
     if (bounds == null) {
+      // No data exists, fetch from one year ago to now
       await _fetchAndStore(base, target, desiredStart, apiDate);
       return;
     }
 
+    // Ensure we have at least one year of data
     if (bounds.minDate.isAfter(desiredStart)) {
       final missingEnd = bounds.minDate.subtract(const Duration(days: 1));
       await _fetchAndStore(base, target, desiredStart, missingEnd);
     }
 
+    // Update recent data if needed
     final lastLocalDate = _normalizeDate(bounds.maxDate);
     if (apiDate.isAfter(lastLocalDate)) {
       final missingStart = lastLocalDate.add(const Duration(days: 1));
@@ -120,9 +139,38 @@ class HistoricalRatesRepository {
 
   DateTime _historyStartFrom(DateTime latestDate) {
     final normalized = _normalizeDate(latestDate);
-    final fiveYearsAgo = DateTime(normalized.year - 5, normalized.month, normalized.day);
+    // Always load at least one year of history
     final oneYearAgo = normalized.subtract(const Duration(days: 365));
-    return fiveYearsAgo.isAfter(oneYearAgo) ? fiveYearsAgo : oneYearAgo;
+    return oneYearAgo;
+  }
+  
+  Future<void> _syncPairWithYearHistory(String base, String target) async {
+    // For first launch, ensure we have at least one year of data
+    final latestRate = await _tryFetchLatestRate(base, target);
+    final apiDate = _normalizeDate(latestRate?.date ?? DateTime.now());
+    final oneYearAgo = _historyStartFrom(apiDate);
+    
+    final bounds = await database.fetchDateBounds(base: base, target: target);
+    
+    if (bounds == null) {
+      // No data exists, fetch full year
+      await _fetchAndStore(base, target, oneYearAgo, apiDate);
+      return;
+    }
+    
+    // Check if we need to fill gaps or extend history
+    if (bounds.minDate.isAfter(oneYearAgo)) {
+      // Missing early data, fetch from one year ago to first existing date
+      final missingEnd = bounds.minDate.subtract(const Duration(days: 1));
+      await _fetchAndStore(base, target, oneYearAgo, missingEnd);
+    }
+    
+    // Check if we need to update recent data
+    final lastLocalDate = _normalizeDate(bounds.maxDate);
+    if (apiDate.isAfter(lastLocalDate)) {
+      final missingStart = lastLocalDate.add(const Duration(days: 1));
+      await _fetchAndStore(base, target, missingStart, apiDate);
+    }
   }
 
   DateTime _normalizeDate(DateTime date) => DateTime(date.year, date.month, date.day);

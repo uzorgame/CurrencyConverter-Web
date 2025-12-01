@@ -70,7 +70,7 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                 const SizedBox(height: 12),
                 CurrencyRow(
                   currency: fromCurrency,
-                  valueText: _topDisplay,
+                  valueText: _getTopDisplayText(),
                   onTap: () => _openCurrencyPicker(ActiveField.top),
                 ),
                 const SizedBox(height: 10),
@@ -350,6 +350,8 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
       _selectedOperation = op;
       _awaitingSecondOperand = true;
       _activeField = ActiveField.top;
+      // Reset display to '0' for internal state consistency
+      // The display will show the equation via _getTopDisplayText()
       _setActiveDisplay('0');
     });
 
@@ -590,6 +592,22 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
     if (dateTime.millisecondsSinceEpoch == 0) return '--';
 
     return formatDateTime(dateTime);
+  }
+
+  String _getTopDisplayText() {
+    if (_selectedOperation != null) {
+      final firstOperandText = _formatNumber(_firstOperand);
+      final operator = _selectedOperation!;
+      if (_awaitingSecondOperand) {
+        // Show "5 + " when waiting for second operand
+        return '$firstOperandText $operator ';
+      } else {
+        // Show "5 + 3" when typing second operand
+        return '$firstOperandText $operator $_topDisplay';
+      }
+    }
+    // Show just the number when no operation is selected
+    return _topDisplay;
   }
 }
 

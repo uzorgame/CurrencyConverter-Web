@@ -31,6 +31,7 @@ Future<void> main() async {
 
   // Initialize database connection (non-blocking for UI)
   // Historical data sync will happen in background after UI loads
+  // This ensures historical data is available for offline use
   historicalRepository.initialize().catchError((error) {
     // Silently handle initialization errors - app can work without historical data
     if (kDebugMode) {

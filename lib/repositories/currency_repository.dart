@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/currency_api.dart';
@@ -78,28 +79,60 @@ class CurrencyRepository {
 
     // Step 1: Load cache first (if available) to show data immediately
     // This ensures UI can display data even if API fails
+    // This is critical for offline functionality
     final hasCache = _restoreRatesFromCache(
       dateOverride: storedLastUpdated ?? cachedDate,
     );
 
-    // Step 2: Always try to fetch fresh data from API
-    // This ensures we check for updates on every app launch
+    // Step 2: Always try to fetch fresh data from API on every app launch
+    // This ensures we check for updates and get the latest rates
+    // If API is unavailable (weekend, no internet), we'll use cached data
     try {
       final latest = await api.getLatestRates();
+      
+      // Validate that we got valid rates
+      if (latest.rates.isEmpty) {
+        throw FormatException('API returned empty rates');
+      }
+      
       _rates = latest.rates;
       _lastUpdated = latest.date;
+      
+      // Cache the fresh data for offline use
       await _cacheRates(now, lastUpdatedDate: latest.date);
       await prefs.setInt(
         _lastRatesTimestampKey,
         now.millisecondsSinceEpoch,
       );
+      
       // Success: fresh data loaded and cached
+      if (kDebugMode) {
+        print('Successfully loaded rates from API for date: ${latest.date}');
+      }
       return;
-    } catch (error) {
-      // API failed - use cache if available (even if old)
+    } on TimeoutException catch (error) {
+      // Network timeout - use cache if available
       if (hasCache) {
-        // Cache was already loaded in step 1, so we're good
-        // Just log the error in debug mode
+        if (kDebugMode) {
+          print('API timeout, using cached data: $error');
+        }
+        return;
+      }
+      // No cache and timeout - try to restore any available cache
+      _restoreRatesFromCache(dateOverride: storedLastUpdated ?? cachedDate);
+    } on http.ClientException catch (error) {
+      // Network or API error - use cache if available
+      if (hasCache) {
+        if (kDebugMode) {
+          print('API error, using cached data: $error');
+        }
+        return;
+      }
+      // No cache and API error - try to restore any available cache
+      _restoreRatesFromCache(dateOverride: storedLastUpdated ?? cachedDate);
+    } catch (error) {
+      // Any other error - use cache if available
+      if (hasCache) {
         if (kDebugMode) {
           print('API update failed, using cached data: $error');
         }

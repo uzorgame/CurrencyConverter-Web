@@ -1,4 +1,4 @@
-const String kAppVersion = '1.0.9+9';
+const String kAppVersion = '1.1.1+11';
 
 const List<String> kSupportedLanguages = ['EN', 'DE', 'FR', 'IT', 'ES', 'RU', 'UK'];
 

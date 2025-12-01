@@ -8,7 +8,7 @@ class Keypad extends StatelessWidget {
   final void Function(String) onKeyPressed;
 
   static const List<_KeyDefinition> _keys = [
-    _KeyDefinition('C', AppColors.keyRow1Bg),
+    _KeyDefinition('%', AppColors.keyRow1Bg),
     _KeyDefinition('←', AppColors.keyRow1Bg),
     _KeyDefinition('↑↓', AppColors.keyRow1Bg),
     _KeyDefinition('÷', AppColors.keyOpBg),
@@ -26,7 +26,7 @@ class Keypad extends StatelessWidget {
     _KeyDefinition('+', AppColors.keyOpBg),
     _KeyDefinition('0', AppColors.keyNumBg),
     _KeyDefinition('.', AppColors.keyNumBg),
-    _KeyDefinition('%', AppColors.keyNumBg),
+    _KeyDefinition('C', AppColors.keyNumBg),
     _KeyDefinition('=', AppColors.keyOpBg),
   ];
 
