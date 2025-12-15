@@ -1,0 +1,11 @@
+{
+  "name": "Currency Converter+",
+  "short_name": "Currency+",
+  "description": "Currency converter with historical rates and charts",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a1a1a",
+  "theme_color": "#D68D41",
+  "orientation": "portrait-primary"
+}
+

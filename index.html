@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Currency converter with historical rates and interactive charts">
+    <meta name="theme-color" content="#D68D41">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Currency Converter+</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="Icon.png">
+    <link rel="shortcut icon" type="image/png" href="Icon.png">
+    <link rel="stylesheet" href="styles.css?v=1.0.2">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <h1 class="app-title" id="appTitle">Currency Converter+</h1>
+            <div class="header-buttons">
+                <button class="header-btn theme-toggle-btn" id="themeToggleBtn" title="Toggle theme">
+                    <svg class="theme-icon theme-icon-sun" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/>
+                        <path d="M12 1V3M12 21V23M4.22 4.22L5.64 5.64M18.36 18.36L19.78 19.78M1 12H3M21 12H23M4.22 19.78L5.64 18.36M18.36 5.64L19.78 4.22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <svg class="theme-icon theme-icon-moon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <a href="https://play.google.com/store/apps" target="_blank" rel="noopener noreferrer" class="header-btn" id="playStoreBtn" title="Google Play Store">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3 20.5V3.5C3 2.91 3.34 2.39 3.84 2.15L13.69 12L3.84 21.85C3.34 21.6 3 21.09 3 20.5ZM16.81 15.12L6.05 21.34L14.54 12.85L16.81 15.12ZM20.16 10.81C20.5 11.08 20.75 11.5 20.75 12C20.75 12.5 20.53 12.9 20.18 13.18L17.89 14.5L15.39 12L17.89 9.5L20.16 10.81ZM6.05 2.66L16.81 8.88L14.54 11.15L6.05 2.66Z" fill="currentColor"/>
+                    </svg>
+                </a>
+                <a href="https://uzorgame.github.io/" target="_blank" rel="noopener noreferrer" class="header-btn" id="websiteBtn" title="UzorGame Website">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
+
+        <!-- Converter Container -->
+        <div class="converter-container">
+            <!-- From Currency Card -->
+            <div class="currency-card">
+                <div class="currency-card-header">
+                    <span class="currency-label">You send</span>
+                </div>
+                <div class="currency-card-body">
+                    <div class="currency-selector" id="fromCurrencySelector">
+                        <div class="flag-container">
+                            <div class="flag" id="fromFlag"></div>
+                        </div>
+                        <div class="currency-code" id="fromCode">CAD</div>
+                        <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 4.5L6 7.5L9 4.5" stroke="#F9F9F9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <input type="text" class="currency-input" id="fromInput" value="0" inputmode="decimal">
+                </div>
+            </div>
+
+            <!-- Swap Button -->
+            <div class="swap-container">
+                <button class="swap-btn" id="swapBtn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M7 16V4M7 4L3 8M7 4L11 8M17 8V20M17 20L21 16M17 20L13 16" stroke="#F9F9F9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- To Currency Card -->
+            <div class="currency-card">
+                <div class="currency-card-header">
+                    <span class="currency-label">You receive</span>
+                </div>
+                <div class="currency-card-body">
+                    <div class="currency-selector" id="toCurrencySelector">
+                        <div class="flag-container">
+                            <div class="flag" id="toFlag"></div>
+                        </div>
+                        <div class="currency-code" id="toCode">USD</div>
+                        <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 4.5L6 7.5L9 4.5" stroke="#F9F9F9" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <input type="text" class="currency-input" id="toInput" value="0" inputmode="decimal">
+                </div>
+            </div>
+
+            <!-- Rate Info -->
+            <div class="rate-info" id="rateInfo">
+                <div class="rate-text" id="rateText">1 CAD = -- USD</div>
+                <div class="rate-date" id="rateDate">--</div>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="chart-section">
+                <div class="chart-header">
+                    <h3 class="chart-title" id="chartTitle">CAD → USD</h3>
+                </div>
+                <div class="chart-periods">
+                    <button class="period-btn" data-period="1m">1M</button>
+                    <button class="period-btn" data-period="6m">6M</button>
+                    <button class="period-btn active" data-period="1y">1Y</button>
+                    <button class="period-btn" data-period="3y">3Y</button>
+                    <button class="period-btn" data-period="5y">5Y</button>
+                    <button class="period-btn" data-period="10y">10Y</button>
+                </div>
+                <div class="chart-container">
+                    <canvas id="historyChart"></canvas>
+                    <div class="chart-loading" id="chartLoading">Loading...</div>
+                    <div class="chart-error" id="chartError" style="display: none;">
+                        <p id="chartErrorTitle">Not enough data to display the chart.</p>
+                        <p id="chartErrorSubtitle">Try a different period.</p>
+                    </div>
+                    <!-- Selection overlay removed - only tooltip on hover is used -->
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <footer class="app-footer">
+                <p>© 2025 UzorGame. Made with precision.</p>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Currency Picker Modal -->
+    <div class="modal" id="currencyPickerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="currenciesTitle">Currencies</h2>
+                <button class="close-btn" id="closePickerBtn">×</button>
+            </div>
+            <div class="search-container">
+                <input type="text" id="currencySearch" placeholder="Search" class="search-input">
+            </div>
+            <div class="currency-list" id="currencyList"></div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content settings-modal">
+            <div class="modal-header">
+                <h2 id="settingsTitle">Settings</h2>
+                <button class="close-btn" id="closeSettingsBtn">×</button>
+            </div>
+            <div class="settings-list">
+                <div class="settings-item" id="themeItem">
+                    <span id="themeLabel">Theme</span>
+                    <span class="settings-value" id="currentTheme">Dark</span>
+                </div>
+                <div class="settings-item" id="privacyItem">
+                    <span id="privacyLabel">Privacy Policy</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Privacy Policy Modal -->
+    <div class="modal" id="privacyModal">
+        <div class="modal-content settings-modal privacy-modal">
+            <div class="modal-header">
+                <h2 id="privacyTitle">Privacy Policy</h2>
+                <button class="close-btn" id="closePrivacyBtn">×</button>
+            </div>
+            <div class="privacy-content" id="privacyContent"></div>
+        </div>
+    </div>
+
+    <script src="app.js?v=1.0.2"></script>
+</body>
+</html>
+
