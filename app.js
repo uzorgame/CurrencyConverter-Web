@@ -431,13 +431,21 @@ function formatAmount(value) {
     const isNegative = value < 0;
     const absValue = Math.abs(value);
     
+    // Always round to 2 decimal places
+    const rounded = Math.round(absValue * 100) / 100;
+    const fixed = rounded.toFixed(2);
+    
     if (absValue < 1000) {
-        const fixed = absValue.toFixed(2);
         const trimmed = trimTrailingZeros(fixed);
         return isNegative ? '-' + trimmed : trimmed;
     }
     
-    return formatInteger(value);
+    // For large numbers, format integer part with thousand separators
+    const parts = fixed.split('.');
+    const integerPart = parseFloat(parts[0]);
+    const decimalPart = parts[1];
+    const formattedInteger = formatInteger(integerPart);
+    return isNegative ? '-' + formattedInteger + '.' + decimalPart : formattedInteger + '.' + decimalPart;
 }
 
 function formatExchangeRate(rate) {
