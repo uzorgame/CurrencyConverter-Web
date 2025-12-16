@@ -637,6 +637,18 @@ class CurrencyConverterApp {
         this.elements.fromInput.addEventListener('focus', () => {
             this.state.activeField = 'from';
         });
+        this.elements.fromInput.addEventListener('keydown', (e) => {
+            // Block + and - keys
+            if (e.key === '+' || e.key === '-' || e.key === 'Plus' || e.key === 'Minus') {
+                e.preventDefault();
+            }
+        });
+        this.elements.fromInput.addEventListener('beforeinput', (e) => {
+            // Block + and - characters from being inserted
+            if (e.data === '+' || e.data === '-') {
+                e.preventDefault();
+            }
+        });
 
         this.elements.toInput.addEventListener('input', (e) => {
             this.state.activeField = 'to';
@@ -644,6 +656,18 @@ class CurrencyConverterApp {
         });
         this.elements.toInput.addEventListener('focus', () => {
             this.state.activeField = 'to';
+        });
+        this.elements.toInput.addEventListener('keydown', (e) => {
+            // Block + and - keys
+            if (e.key === '+' || e.key === '-' || e.key === 'Plus' || e.key === 'Minus') {
+                e.preventDefault();
+            }
+        });
+        this.elements.toInput.addEventListener('beforeinput', (e) => {
+            // Block + and - characters from being inserted
+            if (e.data === '+' || e.data === '-') {
+                e.preventDefault();
+            }
         });
 
         // Swap button
@@ -906,6 +930,11 @@ class CurrencyConverterApp {
 
         this.state.saveState();
         this.updateUI(true); // Reload chart when currencies are swapped
+        
+        // Preload all periods in the background
+        this.preloadAllPeriods().catch(error => {
+            console.error('Error preloading periods:', error);
+        });
     }
 
     openCurrencyPicker() {
@@ -1007,6 +1036,11 @@ class CurrencyConverterApp {
         this.state.saveState();
         this.updateUI(true); // Reload chart when currency changes
         this.closeModal('currencyPickerModal');
+        
+        // Preload all periods in the background
+        this.preloadAllPeriods().catch(error => {
+            console.error('Error preloading periods:', error);
+        });
     }
 
 
@@ -1127,10 +1161,75 @@ class CurrencyConverterApp {
         }
     }
 
+    async preloadAllPeriods() {
+        const periods = ['1m', '6m', '1y', '3y', '5y', '10y'];
+        console.log(`Preloading all periods for ${this.state.fromCurrency}/${this.state.toCurrency}`);
+        
+        // Load all periods in parallel
+        const loadPromises = periods.map(async (period) => {
+            const cacheKey = `${this.state.fromCurrency}-${this.state.toCurrency}-${period}`;
+            
+            // Skip if already cached and valid
+            const cached = this.historicalCache[cacheKey];
+            if (cached && cached.data && cached.timestamp) {
+                const age = Date.now() - cached.timestamp;
+                if (age < this.cacheTTL) {
+                    console.log(`Period ${period} already cached`);
+                    return;
+                }
+            }
+            
+            // Load data for this period
+            const days = this.getPeriodDays(period);
+            try {
+                const rates = await this.api.getHistoricalRates(
+                    this.state.fromCurrency,
+                    this.state.toCurrency,
+                    days
+                );
+                
+                if (rates.length > 0) {
+                    this.historicalCache[cacheKey] = {
+                        data: rates,
+                        timestamp: Date.now()
+                    };
+                    console.log(`Preloaded period ${period} with ${rates.length} data points`);
+                }
+            } catch (error) {
+                console.error(`Error preloading period ${period}:`, error);
+            }
+        });
+        
+        // Wait for all periods to load
+        await Promise.all(loadPromises);
+        console.log('All periods preloaded');
+    }
+
     async loadChart(period) {
         const cacheKey = `${this.state.fromCurrency}-${this.state.toCurrency}-${period}`;
         
-        // Show loading
+        // Check cache first before showing loading
+        const cached = this.historicalCache[cacheKey];
+        if (cached && cached.data && cached.timestamp) {
+            const age = Date.now() - cached.timestamp;
+            if (age < this.cacheTTL) {
+                console.log('Using cached data for', cacheKey);
+                // Hide loading if it was shown
+                this.elements.chartLoading.style.display = 'none';
+                this.elements.chartError.style.display = 'none';
+                if (this.chart) {
+                    this.chart.destroy();
+                    this.chart = null;
+                }
+                this.renderChart(cached.data);
+                return;
+            } else {
+                console.log('Cache expired for', cacheKey);
+                delete this.historicalCache[cacheKey];
+            }
+        }
+        
+        // Show loading only if data is not in cache
         this.elements.chartLoading.style.display = 'block';
         this.elements.chartError.style.display = 'none';
         if (this.chart) {
@@ -1139,19 +1238,6 @@ class CurrencyConverterApp {
         }
 
         try {
-            // Check cache with TTL
-            const cached = this.historicalCache[cacheKey];
-            if (cached && cached.data && cached.timestamp) {
-                const age = Date.now() - cached.timestamp;
-                if (age < this.cacheTTL) {
-                    console.log('Using cached data for', cacheKey);
-                    this.renderChart(cached.data);
-                    return;
-                } else {
-                    console.log('Cache expired for', cacheKey);
-                    delete this.historicalCache[cacheKey];
-                }
-            }
 
             // Lazy load - show loading state immediately, then fetch
             const days = this.getPeriodDays(period);
