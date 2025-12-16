@@ -905,7 +905,7 @@ class CurrencyConverterApp {
         this.historicalCache = {};
 
         this.state.saveState();
-        this.updateUI();
+        this.updateUI(true); // Reload chart when currencies are swapped
     }
 
     openCurrencyPicker() {
@@ -1005,7 +1005,7 @@ class CurrencyConverterApp {
         // Clear chart cache for new currency pair
         this.historicalCache = {};
         this.state.saveState();
-        this.updateUI();
+        this.updateUI(true); // Reload chart when currency changes
         this.closeModal('currencyPickerModal');
     }
 
@@ -1050,7 +1050,7 @@ class CurrencyConverterApp {
         return APP_STRINGS['EN'][key] || key;
     }
 
-    updateUI() {
+    updateUI(shouldReloadChart = false) {
         // Update input values (only if they don't have focus to avoid cursor jumping)
         if (document.activeElement !== this.elements.fromInput) {
             this.elements.fromInput.value = this.state.fromAmount || '0';
@@ -1096,8 +1096,10 @@ class CurrencyConverterApp {
             this.elements.chartTitle.textContent = `${this.state.fromCurrency} → ${this.state.toCurrency}`;
         }
 
-        // Reload chart if currencies changed
-        this.loadChart(this.currentPeriod);
+        // Reload chart only if currencies changed or explicitly requested
+        if (shouldReloadChart) {
+            this.loadChart(this.currentPeriod);
+        }
     }
 
     selectPeriod(period) {
