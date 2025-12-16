@@ -638,16 +638,57 @@ class CurrencyConverterApp {
             this.state.activeField = 'from';
         });
         this.elements.fromInput.addEventListener('keydown', (e) => {
-            // Block + and - keys
-            if (e.key === '+' || e.key === '-' || e.key === 'Plus' || e.key === 'Minus') {
+            // Allow: backspace, delete, tab, escape, enter, arrow keys, home, end
+            const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+            if (allowedKeys.includes(e.key)) {
+                return; // Allow these keys
+            }
+            
+            // Allow Ctrl/Cmd + A, C, V, X (select all, copy, paste, cut)
+            if ((e.ctrlKey || e.metaKey) && ['a', 'c', 'v', 'x'].includes(e.key.toLowerCase())) {
+                return; // Allow these shortcuts
+            }
+            
+            // Allow only digits (0-9) and decimal point (.)
+            const isDigit = /^[0-9]$/.test(e.key);
+            const isDecimalPoint = e.key === '.' || e.key === 'Period';
+            
+            if (!isDigit && !isDecimalPoint) {
+                e.preventDefault(); // Block all other keys
+            }
+            
+            // Prevent multiple decimal points
+            if (isDecimalPoint && e.target.value.includes('.')) {
                 e.preventDefault();
             }
         });
         this.elements.fromInput.addEventListener('beforeinput', (e) => {
-            // Block + and - characters from being inserted
-            if (e.data === '+' || e.data === '-') {
+            // Block all non-numeric characters except decimal point
+            if (e.data && !/^[0-9.]$/.test(e.data)) {
                 e.preventDefault();
             }
+            
+            // Prevent multiple decimal points
+            if (e.data === '.' && e.target.value.includes('.')) {
+                e.preventDefault();
+            }
+        });
+        this.elements.fromInput.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+            // Filter to only allow digits and one decimal point
+            const filtered = pastedText.replace(/[^0-9.]/g, '');
+            const parts = filtered.split('.');
+            let cleaned = parts[0];
+            if (parts.length > 1) {
+                cleaned += '.' + parts.slice(1).join('');
+            }
+            if (parts.length > 2) {
+                cleaned = parts[0] + '.' + parts.slice(1, 2).join('');
+            }
+            // Set the value and trigger input change
+            e.target.value = cleaned;
+            this.handleInputChange(cleaned, 'from');
         });
 
         this.elements.toInput.addEventListener('input', (e) => {
@@ -658,16 +699,57 @@ class CurrencyConverterApp {
             this.state.activeField = 'to';
         });
         this.elements.toInput.addEventListener('keydown', (e) => {
-            // Block + and - keys
-            if (e.key === '+' || e.key === '-' || e.key === 'Plus' || e.key === 'Minus') {
+            // Allow: backspace, delete, tab, escape, enter, arrow keys, home, end
+            const allowedKeys = ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+            if (allowedKeys.includes(e.key)) {
+                return; // Allow these keys
+            }
+            
+            // Allow Ctrl/Cmd + A, C, V, X (select all, copy, paste, cut)
+            if ((e.ctrlKey || e.metaKey) && ['a', 'c', 'v', 'x'].includes(e.key.toLowerCase())) {
+                return; // Allow these shortcuts
+            }
+            
+            // Allow only digits (0-9) and decimal point (.)
+            const isDigit = /^[0-9]$/.test(e.key);
+            const isDecimalPoint = e.key === '.' || e.key === 'Period';
+            
+            if (!isDigit && !isDecimalPoint) {
+                e.preventDefault(); // Block all other keys
+            }
+            
+            // Prevent multiple decimal points
+            if (isDecimalPoint && e.target.value.includes('.')) {
                 e.preventDefault();
             }
         });
         this.elements.toInput.addEventListener('beforeinput', (e) => {
-            // Block + and - characters from being inserted
-            if (e.data === '+' || e.data === '-') {
+            // Block all non-numeric characters except decimal point
+            if (e.data && !/^[0-9.]$/.test(e.data)) {
                 e.preventDefault();
             }
+            
+            // Prevent multiple decimal points
+            if (e.data === '.' && e.target.value.includes('.')) {
+                e.preventDefault();
+            }
+        });
+        this.elements.toInput.addEventListener('paste', (e) => {
+            e.preventDefault();
+            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+            // Filter to only allow digits and one decimal point
+            const filtered = pastedText.replace(/[^0-9.]/g, '');
+            const parts = filtered.split('.');
+            let cleaned = parts[0];
+            if (parts.length > 1) {
+                cleaned += '.' + parts.slice(1).join('');
+            }
+            if (parts.length > 2) {
+                cleaned = parts[0] + '.' + parts.slice(1, 2).join('');
+            }
+            // Set the value and trigger input change
+            e.target.value = cleaned;
+            this.handleInputChange(cleaned, 'to');
         });
 
         // Swap button
